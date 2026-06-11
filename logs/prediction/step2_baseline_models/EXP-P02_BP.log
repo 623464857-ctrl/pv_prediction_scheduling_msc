@@ -1,0 +1,11 @@
+[INFO] 日志文件: logs\prediction\step2_baseline_models\EXP-P02_BP.log
+[INFO] 设备: cpu | 输入维度: 208
+[INFO] 最佳 epoch=11 | train_loss=0.003430 | val_loss=0.002742
+[INFO] 模型: bp.pt | 预测: bp_test.csv
+[INFO] EXP-P02-BP 结束
+====================================
+【EXP-P02-BP 摘要】
+- 结构: 208->128->64->1, Dropout=0.2, Adam lr=1e-3
+- 最佳验证损失: 0.002742 (epoch 11)
+- 产出: models/bp.pt, metrics/bp_train_history.csv, predictions/bp_test.csv
+============================================================

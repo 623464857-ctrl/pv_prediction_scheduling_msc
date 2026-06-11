@@ -1,0 +1,14 @@
+[INFO] 日志文件: logs\prediction\step2_baseline_models\EXP-P02_summarize.log
+[INFO] BP | MAE=0.025541 RMSE=0.054451 MAPE=24.41% R2=0.960564
+[INFO] SVR | MAE=0.031739 RMSE=0.067694 MAPE=28.59% R2=0.939048
+[INFO] Random Forest | MAE=0.028279 RMSE=0.065202 MAPE=32.57% R2=0.943453
+[INFO] LSTM | MAE=0.023099 RMSE=0.049206 MAPE=21.47% R2=0.967795
+[INFO] BiLSTM | MAE=0.021874 RMSE=0.046510 MAPE=22.16% R2=0.971227
+[INFO] 预测曲线展示窗口: 前 480 个测试点 (约 5 天)
+[INFO] 汇总完成 | 指标表: baseline_comparison_metrics.csv
+[INFO] EXP-P02-summarize 结束
+��模型误差表: metrics/baseline_comparison_metrics.csv
+- RMSE 最优: BiLSTM (0.046510)
+- 图表: figures/loss_*.png, pred_*.png, metrics_bar_comparison.png
+- 结论: reports/EXP-P02_preliminary_conclusion.md
+============================================================

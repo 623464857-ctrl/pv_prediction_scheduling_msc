@@ -1,0 +1,2 @@
+data/prediction/step1_preprocessing/processed/solar_stations_long.csv filter=lfs diff=lfs merge=lfs -text
+data/prediction/step2_baseline_models/models/rf.joblib filter=lfs diff=lfs merge=lfs -text

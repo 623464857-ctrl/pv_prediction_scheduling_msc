@@ -1,0 +1,11 @@
+[INFO] 日志文件: logs\prediction\step2_baseline_models\EXP-P02_BiLSTM.log
+[INFO] 设备: cpu | 输入: [batch, 16, 13]
+[INFO] 最佳 epoch=21 | val_loss=0.002266
+[INFO] 预测: bilstm_test.csv
+[INFO] EXP-P02-BiLSTM 结束
+================================
+【EXP-P02-BiLSTM 摘要】
+- 结构: 2层 BiLSTM hidden=64×2 -> Linear(128,1), Dropout=0.2
+- 最佳验证损失: 0.002266 (epoch 21)
+- 产出: models/bilstm.pt, metrics/bilstm_train_history.csv, predictions/bilstm_test.csv
+============================================================
