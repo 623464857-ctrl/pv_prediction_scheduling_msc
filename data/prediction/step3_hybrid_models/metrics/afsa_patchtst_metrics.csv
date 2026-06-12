@@ -1,0 +1,2 @@
+model_key,MAE,RMSE,MAPE,R2,display_name,training_time_sec,search_time_sec
+afsa_patchtst,0.031535688787698746,0.05609475997916106,24.945096969604492,0.9571828842163086,AFSA-PatchTST,224.0,300

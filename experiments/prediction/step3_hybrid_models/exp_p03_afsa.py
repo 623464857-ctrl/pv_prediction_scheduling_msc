@@ -9,7 +9,9 @@ import time
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from exp_p03_common import (
@@ -345,7 +347,6 @@ def main() -> None:
     best = min(history, key=lambda x: x["val_loss"])
     logger.info("完整训练最佳 epoch=%d | val_loss=%.6f", best["epoch"], best["val_loss"])
 
-    import torch
     torch.save(model.state_dict(), MODELS_DIR / "afsa_patchtst.pt")
     save_train_history("afsa_patchtst", history)
 
