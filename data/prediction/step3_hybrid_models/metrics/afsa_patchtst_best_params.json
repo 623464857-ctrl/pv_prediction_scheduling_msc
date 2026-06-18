@@ -1,0 +1,10 @@
+{
+  "patch_len": 2,
+  "stride": 2,
+  "d_model": 32,
+  "n_heads": 8,
+  "num_layers": 3,
+  "dropout": 0.1,
+  "learning_rate": 0.002,
+  "batch_size": 256
+}
