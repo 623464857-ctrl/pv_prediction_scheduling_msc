@@ -1,0 +1,23 @@
+[INFO] 日志文件: logs\prediction\step4_optuna_hybrid\EXP-P04_h16_prepare_samples.log
+[INFO] ============================================================
+[INFO] 开始构造 horizon=16 样本
+[INFO] 加载数据: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc\data\prediction\step1_preprocessing\processed\stations\Site_1_preprocessed.csv
+[INFO] 原始行数: 70176  |  时间范围: 2019-01-01 00:00:00 ~ 2020-12-31 23:45:00
+[INFO] 构造序列: lookback=16, horizon=16, 特征数=13
+[INFO] 总样本数: 70144  |  X shape: (70144, 16, 13)  |  y shape: (70144, 16)
+[INFO] 训练集: 49100  验证集: 10522  测试集: 10522
+[INFO]   保存 X_train_seq.npy  ->  shape=(49100, 16, 13)
+[INFO]   保存 X_val_seq.npy  ->  shape=(10522, 16, 13)
+[INFO]   保存 X_test_seq.npy  ->  shape=(10522, 16, 13)
+[INFO]   保存 y_train.npy  ->  shape=(49100, 16)
+[INFO]   保存 y_val.npy  ->  shape=(10522, 16)
+[INFO]   保存 y_test.npy  ->  shape=(10522, 16)
+[INFO]   保存 y_train_raw.npy  ->  shape=(49100, 16)
+[INFO]   保存 y_val_raw.npy  ->  shape=(10522, 16)
+[INFO]   保存 y_test_raw.npy  ->  shape=(10522, 16)
+[INFO]   保存 scaler_params.json
+[INFO]   保存 test_timestamps.csv (10522 行)
+[INFO]   保存 meta.json
+[INFO] ============================================================
+[INFO] 样本构造完成！耗时: 0.9 秒
+[INFO] 保存目录: data\prediction\step4_optuna_hybrid\samples\h16

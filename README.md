@@ -11,6 +11,7 @@
 | EXP-P01 | 数据清洗与时间对齐 | `experiments/prediction/step1_data_cleaning_alignment/run_exp_p01_preprocessing.py` | ✅ 已完成 |
 | EXP-P02 | 五类基础模型对比 | `experiments/prediction/step2_baseline_models/` | ✅ 已完成 |
 | EXP-P03 | 混合深度学习模型对比 | `experiments/prediction/step3_hybrid_models/` | ✅ 已完成 |
+| EXP-P04 | Optuna 超参优化与多 Horizon 预测 | `experiments/prediction/step4_optuna_hybrid/` | ✅ 已完成 |
 
 ## 快速开始
 
@@ -37,14 +38,13 @@ python experiments/prediction/step2_baseline_models/run_exp_p02_train_svr.py
 python experiments/prediction/step2_baseline_models/run_exp_p02_train_rf.py
 python experiments/prediction/step2_baseline_models/run_exp_p02_summarize_results.py
 
-# Step 3: 混合模型训练
-python experiments/prediction/step3_hybrid_models/run_exp_p03_prepare_samples.py
-python experiments/prediction/step3_hybrid_models/run_exp_p03_train_lstm.py
-python experiments/prediction/step3_hybrid_models/run_exp_p03_train_bilstm.py
-python experiments/prediction/step3_hybrid_models/run_exp_p03_train_cnn_lstm.py
-python experiments/prediction/step3_hybrid_models/run_exp_p03_train_cnn_bilstm.py
-python experiments/prediction/step3_hybrid_models/run_exp_p03_afsa_final.py
-python experiments/prediction/step3_hybrid_models/run_exp_p03_summarize.py
+# Step 4: Optuna 超参优化 + 多 Horizon 预测
+python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_prepare_samples --horizon 1
+python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_optuna --horizon 1
+python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_final_train --horizon 1
+python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_reproduce --horizon 1
+python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_report --horizon 1
+# (--horizon 可选 1/4/16，分别对应 15min/1h/4h 预测)
 ```
 
 ## 目录结构
@@ -179,6 +179,45 @@ pv_prediction_scheduling_msc/
 │               ├── exp_p03_report.md            # 简要实验报告
 │               └── hybrid_deep_learning_experiment_report.md  # 完整实验报告
 │
+│       └── step4_optuna_hybrid/                 # EXP-P04 Optuna 超参优化 + 多 Horizon
+│           ├── config/
+│           │   ├── exp_p04_base.json           # 基础配置（lookback/epochs/Optuna 参数等）
+│           │   ├── exp_p04_h1.json             # Horizon=1 配置（15min）
+│           │   ├── exp_p04_h4.json             # Horizon=4 配置（1h）
+│           │   └── exp_p04_h16.json            # Horizon=16 配置（4h）
+│           ├── samples/                         # 各 horizon 滑动窗口样本
+│           │   ├── h1/                         # Horizon=1 样本
+│           │   │   ├── X_train_seq.npy
+│           │   │   ├── y_train.npy
+│           │   │   └── meta.json
+│           │   ├── h4/                         # Horizon=4 样本
+│           │   └── h16/                        # Horizon=16 样本
+│           ├── models/                          # 训练好的最优模型
+│           │   ├── h1/                         # Horizon=1 最优模型
+│           │   ├── h4/
+│           │   └── h16/
+│           ├── predictions/                     # 测试集预测结果
+│           │   ├── h1/
+│           │   ├── h4/
+│           │   └── h16/
+│           ├── metrics/                         # 训练指标与历史
+│           │   ├── h1/                         # Horizon=1 指标
+│           │   │   ├── lstm_optuna.json        # Optuna 最优参数
+│           │   │   ├── lstm_final_train_history.csv
+│           │   │   ├── lstm_test_metrics.json
+│           │   │   └── lstm_reproduce.json      # 多 seed 复现均值/标准差
+│           │   ├── h4/
+│           │   └── h16/
+│           ├── figures/                         # 可视化图表
+│           │   ├── h1/
+│           │   ├── h4/
+│           │   ├── h16/
+│           │   └── comparison_all_horizons.png   # 三 horizon 跨模型对比
+│           └── reports/
+│               ├── EXP-P04_h1_详细实验汇报.md
+│               ├── EXP-P04_h4_详细实验汇报.md
+│               └── EXP-P04_h16_详细实验汇报.md
+│
 ├── experiments/                                 # 实验脚本目录
 │   ├── README.md                                # 实验目录说明
 │   ├── logs/                                    # 实验日志副本
@@ -221,6 +260,18 @@ pv_prediction_scheduling_msc/
 │   │       ├── run_exp_p03_afsa_final.py         # AFSA-PatchTST 快速训练（已知最优参数）
 │   │       └── run_exp_p03_summarize.py          # 结果汇总与可视化
 │   │
+│   │   └── step4_optuna_hybrid/                 # EXP-P04 Optuna + 多 Horizon 预测
+│   │       ├── exp_p04_common.py                # 共享路径/配置/指标工具
+│   │       ├── exp_p04_models.py                # 模型定义（含 MiniPatchTST）
+│   │       ├── exp_p04_torch_utils.py           # PyTorch 训练/预测工具
+│   │       ├── exp_p04_cv.py                   # 时序交叉验证（Rolling Window）
+│   │       ├── exp_p04_features.py              # 特征工程（lag/ramp/rolling）
+│   │       ├── run_exp_p04_prepare_samples.py   # 样本构造
+│   │       ├── run_exp_p04_optuna.py           # Optuna 超参搜索
+│   │       ├── run_exp_p04_final_train.py      # 最终训练
+│   │       ├── run_exp_p04_reproduce.py        # 多 seed 复现
+│   │       └── run_exp_p04_report.py           # 报告生成
+│   │
 │   └── scheduling/                              # 预留调度任务目录
 │       └── README.md
 │
@@ -246,6 +297,20 @@ pv_prediction_scheduling_msc/
             ├── EXP-P03_AFSA.log
             ├── EXP-P03_AFSA_Final.log
             └── EXP-P03_summarize.log
+        └── step4_optuna_hybrid/
+            ├── EXP-P04_h1_prepare.log
+            ├── EXP-P04_h4_prepare.log
+            ├── EXP-P04_h16_prepare.log
+            ├── EXP-P04_h1_optuna.log
+            ├── EXP-P04_h4_optuna.log
+            ├── EXP-P04_h16_optuna.log
+            ├── EXP-P04_h1_final.log
+            ├── EXP-P04_h4_final.log
+            ├── EXP-P04_h16_final.log
+            ├── EXP-P04_h1_reproduce.log
+            ├── EXP-P04_h4_reproduce.log
+            ├── EXP-P04_h16_reproduce.log
+            └── EXP-P04_h{1,4,16}_report.log
 ```
 
 ## 核心模块说明
@@ -309,6 +374,29 @@ pv_prediction_scheduling_msc/
 - CNN-BiLSTM 优于 BiLSTM：局部特征与双向时序建模互补
 - 最佳模型为 CNN-LSTM（RMSE=0.047724）
 
+### EXP-P04: Optuna 超参优化与多 Horizon 预测
+
+**实验设计：**
+- 三个预测步长：h1=15min, h4=1h, h16=4h
+- 特征工程：辐照/气象 + 时间周期编码 + 15min ramp 特征
+- Optuna 8 trials/模型/horizon，Rolling 3-fold 时序交叉验证
+- 最终训练 50 epochs（patience=8），多 seed（42/43/44）复现
+
+**关键结果（多 Seed 复现 Mean ± Std）：**
+
+| Horizon | 最优模型 | MAE | RMSE | R² |
+|---------|---------|-----|------|-----|
+| **h1 (15min)** | **BiLSTM** | **0.0188 ± 0.0000** | 0.0440 | 0.9743 |
+| **h4 (1h)** | **CNN-LSTM** | **0.0254 ± 0.0004** | 0.0561 | 0.9582 |
+| **h16 (4h)** | **CNN-BiLSTM** | **0.0387 ± 0.0002** | 0.0821 | 0.9103 |
+
+**vs 旧 AFSA-PatchTST (MAE=0.0315, horizon=1)：** BiLSTM 提升 **40%**
+
+**结论：**
+- h1 短预测：BiLSTM/LSTM 双向建模最优，CNN-LSTM 次之
+- h4 中预测：CNN-LSTM 兼顾局部特征与时序建模，综合最优
+- h16 长预测：CNN-BiLSTM 误差最低（RMSE=0.0821），CNN 结构对长 horizon 建模更稳定
+
 ## 核心代码模块
 
 ### exp_p03_common.py
@@ -345,21 +433,55 @@ PyTorch 训练工具模块，包含：
 - `plot_search_curve()`: 绘制搜索曲线
 - `run_full_training()`: 使用最优参数完整训练
 
+### exp_p04_common.py
+共享工具模块（EXP-P04），包含：
+- 路径管理（CONFIG_DIR, SAMPLES_DIR, MODELS_DIR, METRICS_DIR, FIGURES_DIR 等）
+- 配置加载（base/h1/h4/h16 三套配置）、日志设置
+- 指标计算（MAE, RMSE, MAPE, R²）
+- 可视化函数（loss curve, prediction curve, overlay, metrics bar, horizon comparison）
+
+### exp_p04_models.py
+模型定义模块（EXP-P04），包含：
+- `LSTMRegressor`: 单向 LSTM（含 Dropout）
+- `BiLSTMRegressor`: 双向 LSTM
+- `CNNLSTMRegressor`: 1D-CNN 特征提取 + LSTM 时序建模
+- `CNNBiLSTMRegressor`: 1D-CNN + 双向 LSTM
+- `MiniPatchTSTRegressor`: 轻量 PatchTST（含 class token 回归头）
+- `build_model()`: 模型构建工厂函数
+
+### exp_p04_torch_utils.py
+PyTorch 训练工具模块（EXP-P04），包含：
+- `get_device()`: GPU/CPU 自动选择
+- `make_loader()`: DataLoader 构建
+- `predict()`: 模型推理
+- `train_with_early_stop()`: Early Stopping 训练循环
+- `MultiSeedRunner`: 多 seed 并行训练与指标汇总
+
+### exp_p04_cv.py
+时序交叉验证模块，包含：
+- `RollingWindowCV`: Rolling Window 时序交叉验证
+- 时序分割（避免未来数据泄露）
+
+### exp_p04_features.py
+特征工程模块，包含：
+- `add_lag_features()`: 功率 lag 特征
+- `add_ramp_features()`: 多尺度 ramp 特征（15min/1h/4h）
+- `add_rolling_features()`: 滚动均值/标准差特征
+
 ## 数据流
 
 ```
-raw CSV → EXP-P01 → preprocessed CSV → EXP-P02/P03 → samples (.npy) → models (.pt) → predictions (.csv) → metrics/figures/reports
+raw CSV → EXP-P01 → preprocessed CSV → EXP-P02/P03 → samples → models → predictions → metrics/figures/reports
+                                                               ↘ EXP-P04 (多 horizon 扩展)
+                                                                   → h1/h4/h16 样本 → Optuna 调参 → 最终模型 → 多 seed 复现 → 报告
 ```
 
 ## 命名约定
 
-- 实验编号：EXP-P01, EXP-P02, EXP-P03
+- 实验编号：EXP-P01, EXP-P02, EXP-P03, EXP-P04
 - 脚本命名：`run_exp_<编号>_<功能>.py`
 - 模块命名：`exp_<编号>_<模块名>.py`
-- 日志命名：`EXP-<编号>_<描述>.log`
-- 模型文件：`<model_name>.pt`
-- 预测文件：`<model_name>_test.csv`
-- 指标文件：`<model_name>_train_history.csv`
+- Horizon 标识：`h1` (15min) / `h4` (1h) / `h16` (4h)
 
 ## 重要说明
 
@@ -389,7 +511,17 @@ raw CSV → EXP-P01 → preprocessed CSV → EXP-P02/P03 → samples (.npy) → 
 - `data/prediction/step3_hybrid_models/figures/*.png`
 - `data/prediction/step3_hybrid_models/reports/*.md`
 
+### EXP-P04 产出
+- `data/prediction/step4_optuna_hybrid/samples/h{1,4,16}/*.npy`
+- `data/prediction/step4_optuna_hybrid/models/h{1,4,16}/*.pt`
+- `data/prediction/step4_optuna_hybrid/predictions/h{1,4,16}/*.csv`
+- `data/prediction/step4_optuna_hybrid/metrics/h{1,4,16}/*.json`
+- `data/prediction/step4_optuna_hybrid/figures/h{1,4,16}/*.png`
+- `data/prediction/step4_optuna_hybrid/figures/comparison_all_horizons.png`
+- `data/prediction/step4_optuna_hybrid/reports/EXP-P04_h{1,4,16}_详细实验汇报.md`
+
 ### 日志文件
 - `logs/prediction/step1_data_cleaning_alignment/EXP-P01.log`
 - `logs/prediction/step2_baseline_models/EXP-P02_*.log`
 - `logs/prediction/step3_hybrid_models/EXP-P03_*.log`
+- `logs/prediction/step4_optuna_hybrid/EXP-P04_h{1,4,16}_{prepare,optuna|final|reproduce|report}.log`

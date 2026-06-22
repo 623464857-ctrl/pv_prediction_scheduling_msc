@@ -1,0 +1,21 @@
+{
+  "model": "cnn_lstm",
+  "horizon": 16,
+  "best_params": {
+    "conv_channels": "16",
+    "kernel_size": "5",
+    "lstm_hidden": "128",
+    "lstm_layers": "2",
+    "dropout": "0.2",
+    "lr": "0.001",
+    "batch_size": "64"
+  },
+  "best_value": 0.21464946553813088,
+  "quick_best_value": 0.18714240200509918,
+  "fold_losses": [
+    0.17475981780148428,
+    0.1485864581490777,
+    0.3206021206638306
+  ],
+  "n_trials": 8
+}

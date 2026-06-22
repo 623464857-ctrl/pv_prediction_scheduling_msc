@@ -1,0 +1,13 @@
+{
+  "model": "bilstm",
+  "horizon": 4,
+  "best_params": {
+    "hidden": 64,
+    "layers": 2,
+    "dropout": 0.2,
+    "lr": 0.001,
+    "batch_size": 64
+  },
+  "best_value": 0.15018991796338202,
+  "note": "baseline_fixed_params"
+}

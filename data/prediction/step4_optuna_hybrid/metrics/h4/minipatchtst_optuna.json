@@ -1,0 +1,22 @@
+{
+  "model": "minipatchtst",
+  "horizon": 4,
+  "best_params": {
+    "patch_len": "4",
+    "stride": "4",
+    "d_model": "32",
+    "n_heads": "2",
+    "num_layers": "2",
+    "dropout": "0.1",
+    "lr": "0.001",
+    "batch_size": "64"
+  },
+  "best_value": 0.15865973014637078,
+  "quick_best_value": 0.12462265324590892,
+  "fold_losses": [
+    0.13684612046226713,
+    0.08608672102347564,
+    0.2530463489533695
+  ],
+  "n_trials": 8
+}

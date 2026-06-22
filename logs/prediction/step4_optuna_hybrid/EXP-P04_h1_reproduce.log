@@ -1,0 +1,42 @@
+[INFO] 日志文件: logs\prediction\step4_optuna_hybrid\EXP-P04_h1_reproduce.log
+[INFO] ============================================================
+[INFO] EXP-P04 多 Seed 复现  horizon=1
+[INFO] ============================================================
+[INFO] 多 Seed 复现  horizon=1  seeds=[42, 43, 44]
+[INFO] ----------------------------------------
+[INFO] 模型: lstm  参数: {'hidden': 64, 'layers': 2, 'dropout': 0.2, 'batch_size': 64, 'lr': 0.001}
+[INFO]   seed=42  MAE=0.0177  RMSE=0.0440  R2=0.9742  time=133.5s
+[INFO]   seed=43  MAE=0.0194  RMSE=0.0425  R2=0.9759  time=152.9s
+[INFO]   seed=44  MAE=0.0197  RMSE=0.0449  R2=0.9732  time=169.5s
+[INFO]   汇总  MAE=0.0189±0.0011  RMSE=0.0438±0.0012  R2=0.9745±0.0014
+[INFO]   seed=42 预测已保存: lstm_seed42_test.csv
+[INFO] ----------------------------------------
+[INFO] 模型: bilstm  参数: {'hidden': 64, 'layers': 2, 'dropout': 0.2, 'batch_size': 64, 'lr': 0.001}
+[INFO]   seed=42  MAE=0.0187  RMSE=0.0456  R2=0.9723  time=217.0s
+[INFO]   seed=43  MAE=0.0187  RMSE=0.0448  R2=0.9733  time=280.5s
+[INFO]   seed=44  MAE=0.0188  RMSE=0.0415  R2=0.9771  time=226.3s
+[INFO]   汇总  MAE=0.0188±0.0000  RMSE=0.0440±0.0022  R2=0.9743±0.0025
+[INFO]   seed=42 预测已保存: bilstm_seed42_test.csv
+[INFO] ----------------------------------------
+[INFO] 模型: cnn_lstm  参数: {'conv_channels': '16', 'kernel_size': '5', 'lstm_hidden': '64', 'lstm_layers': '1', 'dropout': '0.1', 'batch_size': 32, 'lr': 0.001}
+[INFO]   seed=42  MAE=0.0199  RMSE=0.0438  R2=0.9745  time=114.9s
+[INFO]   seed=43  MAE=0.0189  RMSE=0.0400  R2=0.9787  time=179.7s
+[INFO]   seed=44  MAE=0.0182  RMSE=0.0399  R2=0.9788  time=119.5s
+[INFO]   汇总  MAE=0.0190±0.0009  RMSE=0.0413±0.0022  R2=0.9773±0.0025
+[INFO]   seed=42 预测已保存: cnn_lstm_seed42_test.csv
+[INFO] ----------------------------------------
+[INFO] 模型: cnn_bilstm  参数: {'conv_channels': '16', 'kernel_size': '3', 'bilstm_hidden': '128', 'bilstm_layers': '1', 'dropout': '0.2', 'batch_size': 64, 'lr': 0.0001}
+[INFO]   seed=42  MAE=0.0212  RMSE=0.0426  R2=0.9758  time=353.3s
+[INFO]   seed=43  MAE=0.0193  RMSE=0.0426  R2=0.9759  time=269.0s
+[INFO]   seed=44  MAE=0.0195  RMSE=0.0420  R2=0.9765  time=261.6s
+[INFO]   汇总  MAE=0.0200±0.0011  RMSE=0.0424±0.0004  R2=0.9761±0.0004
+[INFO]   seed=42 预测已保存: cnn_bilstm_seed42_test.csv
+[INFO] ----------------------------------------
+[INFO] 模型: minipatchtst  参数: {'patch_len': '8', 'stride': '2', 'd_model': '32', 'n_heads': '2', 'num_layers': '2', 'dropout': '0.2', 'batch_size': 64, 'lr': 0.001}
+[INFO]   seed=42  MAE=0.0223  RMSE=0.0419  R2=0.9767  time=116.4s
+[INFO]   seed=43  MAE=0.0255  RMSE=0.0451  R2=0.9729  time=87.2s
+[INFO]   seed=44  MAE=0.0276  RMSE=0.0490  R2=0.9681  time=77.3s
+[INFO]   汇总  MAE=0.0251±0.0027  RMSE=0.0453±0.0035  R2=0.9726±0.0043
+[INFO]   seed=42 预测已保存: minipatchtst_seed42_test.csv
+[INFO] ============================================================
+[INFO] 多 Seed 复现完成！

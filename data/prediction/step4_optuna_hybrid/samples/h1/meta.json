@@ -1,0 +1,28 @@
+{
+  "lookback": 16,
+  "horizon": 1,
+  "n_features": 13,
+  "feature_cols": [
+    "power_ramp_15m_pu",
+    "total_irradiance_wm2",
+    "direct_normal_irradiance_wm2",
+    "global_horizontal_irradiance_wm2",
+    "air_temperature_c",
+    "atmosphere_hpa",
+    "relative_humidity_pct",
+    "daylight_flag",
+    "sin_hour",
+    "cos_hour",
+    "sin_dayofyear",
+    "cos_dayofyear",
+    "data_quality_score"
+  ],
+  "n_train": 49111,
+  "n_val": 10524,
+  "n_test": 10524,
+  "train_frac": 0.7,
+  "val_frac": 0.15,
+  "test_frac": 0.15,
+  "source_csv": "data\\prediction\\step1_preprocessing\\processed\\stations\\Site_1_preprocessed.csv",
+  "total_windows": 70159
+}

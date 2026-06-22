@@ -9,16 +9,30 @@
 
 | 编号 | 目录 | 脚本 | 状态 |
 |------|------|------|------|
-| P01 | `prediction/step1_data_cleaning_alignment/` | `run_exp_p01_preprocessing.py` | 已完成 |
-| P02 | `prediction/step2_baseline_models/` | 见下方分阶段脚本 | 已完成 |
+| P01 | `prediction/step1_data_cleaning_alignment/` | `run_exp_p01_preprocessing.py` | ✅ 已完成 |
+| P02 | `prediction/step2_baseline_models/` | 见下方分阶段脚本 | ✅ 已完成 |
+| P03 | `prediction/step3_hybrid_models/` | 多脚本（见 step3 README） | ✅ 已完成 |
+| P04 | `prediction/step4_optuna_hybrid/` | `run_exp_p04_*.py` | ✅ 已完成 |
 
-### EXP-P02 分阶段脚本
+### EXP-P04 分阶段脚本
 
-| 阶段 | 脚本 | 状态 |
+| 阶段 | 脚本 | 功能 |
 |------|------|------|
-| 1 | `run_exp_p02_prepare_samples.py` | 已完成 |
-| 2a~2e | `run_exp_p02_train_*.py` | 待执行 |
-| 3 | `run_exp_p02_summarize_results.py` | 待执行 |
+| 1 | `run_exp_p04_prepare_samples.py` | 构造 h1/h4/h16 滑动窗口样本 + 特征工程 |
+| 2 | `run_exp_p04_optuna.py` | Optuna 超参搜索（8 trials/模型） |
+| 3 | `run_exp_p04_final_train.py` | 最优参数最终训练 |
+| 4 | `run_exp_p04_reproduce.py` | 多 seed（42/43/44）复现，汇总均值/标准差 |
+| 5 | `run_exp_p04_report.py` | 生成 Markdown 报告 + 图表 |
+
+**运行示例：**
+```powershell
+python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_prepare_samples --horizon 1
+python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_optuna --horizon 1
+python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_final_train --horizon 1
+python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_reproduce --horizon 1
+python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_report --horizon 1
+```
+`--horizon` 支持 `1` (15min) / `4` (1h) / `16` (4h)
 
 ## 调度方向（scheduling）
 

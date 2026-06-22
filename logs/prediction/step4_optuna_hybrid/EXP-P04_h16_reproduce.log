@@ -1,0 +1,30 @@
+[INFO] 日志文件: logs\prediction\step4_optuna_hybrid\EXP-P04_h16_reproduce.log
+[INFO] ============================================================
+[INFO] EXP-P04 多 Seed 复现  horizon=16
+[INFO] ============================================================
+[INFO] 多 Seed 复现  horizon=16  seeds=[42, 43, 44]
+[INFO] ----------------------------------------
+[INFO] 模型: lstm  参数: {'hidden': 64, 'layers': 2, 'dropout': 0.2, 'batch_size': 64, 'lr': 0.001}
+[INFO]   seed=42  MAE=0.0380  RMSE=0.0858  R2=0.9021  time=64.5s
+[INFO]   seed=43  MAE=0.0384  RMSE=0.0801  R2=0.9147  time=69.1s
+[INFO]   seed=44  MAE=0.0388  RMSE=0.0841  R2=0.9060  time=68.9s
+[INFO]   汇总  MAE=0.0384±0.0004  RMSE=0.0833±0.0029  R2=0.9076±0.0064
+[INFO]   seed=42 预测已保存: lstm_seed42_test.csv
+[INFO] ----------------------------------------
+[INFO] 模型: bilstm  参数: {'hidden': 64, 'layers': 2, 'dropout': 0.2, 'batch_size': 64, 'lr': 0.001}
+[INFO]   seed=42  MAE=0.0481  RMSE=0.0973  R2=0.8741  time=112.8s
+[INFO]   seed=43  MAE=0.0379  RMSE=0.0814  R2=0.9119  time=135.3s
+[INFO]   seed=44  MAE=0.0407  RMSE=0.0873  R2=0.8985  time=148.5s
+[INFO]   汇总  MAE=0.0422±0.0052  RMSE=0.0887±0.0080  R2=0.8949±0.0192
+[INFO]   seed=42 预测已保存: bilstm_seed42_test.csv
+[INFO] ----------------------------------------
+[INFO] 模型: cnn_lstm  参数: {'conv_channels': '16', 'kernel_size': '5', 'lstm_hidden': '128', 'lstm_layers': '2', 'dropout': '0.2', 'batch_size': 64, 'lr': 0.001}
+[INFO]   seed=42  MAE=0.0393  RMSE=0.0861  R2=0.9015  time=163.1s
+[INFO]   seed=43  MAE=0.0407  RMSE=0.0835  R2=0.9072  time=157.4s
+[INFO]   seed=44  MAE=0.0374  RMSE=0.0832  R2=0.9079  time=183.9s
+[INFO]   汇总  MAE=0.0391±0.0017  RMSE=0.0843±0.0016  R2=0.9055±0.0035
+[INFO]   seed=42 预测已保存: cnn_lstm_seed42_test.csv
+[INFO] ----------------------------------------
+[INFO] 模型: cnn_bilstm  参数: {'conv_channels': '16', 'kernel_size': '3', 'bilstm_hidden': '128', 'bilstm_layers': '1', 'dropout': '0.2', 'batch_size': 64, 'lr': 0.0001}
+[INFO]   seed=42  MAE=0.0384  RMSE=0.0825  R2=0.9095  time=205.5s
+[INFO]   seed=43  MAE=0.0388  RMSE=0.0823  R2=0.9099  time=249.4s

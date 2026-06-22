@@ -1,0 +1,21 @@
+{
+  "model": "cnn_bilstm",
+  "horizon": 4,
+  "best_params": {
+    "conv_channels": "16",
+    "kernel_size": "5",
+    "bilstm_hidden": "128",
+    "bilstm_layers": "2",
+    "dropout": "0.2",
+    "lr": "0.001",
+    "batch_size": "64"
+  },
+  "best_value": 0.11475494340666975,
+  "quick_best_value": 0.11362814527155045,
+  "fold_losses": [
+    0.07199474301245908,
+    0.09297093022590477,
+    0.1792991569816454
+  ],
+  "n_trials": 8
+}

@@ -1,0 +1,20 @@
+{
+    "project_root": ".",
+    "data_raw_path": "data/prediction/step1_preprocessing/processed/stations/Site_1_preprocessed.csv",
+    "step4_root": "data/prediction/step4_optuna_hybrid",
+    "lookback": 16,
+    "train_frac": 0.70,
+    "val_frac": 0.15,
+    "test_frac": 0.15,
+    "n_rolling_folds": 3,
+    "rolling_train_frac": 0.667,
+    "optuna_n_trials_per_model": 8,
+    "optuna_n_startup_trials": 5,
+    "optuna_n_warmup_steps": 3,
+    "final_max_epochs": 50,
+    "final_patience": 8,
+    "final_lr": 0.001,
+    "reproduce_seeds": [42, 43, 44],
+    "old_model_name": "afsa_patchtst",
+    "old_metrics_path": "data/prediction/step3_hybrid_models/metrics/afsa_patchtst_test_metrics.json"
+}
