@@ -270,7 +270,10 @@ pv_prediction_scheduling_msc/
 │   │       ├── run_exp_p04_optuna.py           # Optuna 超参搜索
 │   │       ├── run_exp_p04_final_train.py      # 最终训练
 │   │       ├── run_exp_p04_reproduce.py        # 多 seed 复现
-│   │       └── run_exp_p04_report.py           # 报告生成
+│   │       ├── run_exp_p04_validation.py       # 复现结果校验
+│   │       ├── run_exp_p04_report.py           # 报告生成
+│   │       ├── run_exp_p04_analysis.py         # 跨 Horizon 对比分析
+│   │       └── run_exp_p04_summary.py          # 综合对比可视化
 │   │
 │   └── scheduling/                              # 预留调度任务目录
 │       └── README.md
@@ -310,7 +313,9 @@ pv_prediction_scheduling_msc/
             ├── EXP-P04_h1_reproduce.log
             ├── EXP-P04_h4_reproduce.log
             ├── EXP-P04_h16_reproduce.log
-            └── EXP-P04_h{1,4,16}_report.log
+            ├── EXP-P04_h1_report.log
+            ├── EXP-P04_h4_report.log
+            └── EXP-P04_h16_report.log
 ```
 
 ## 核心模块说明
@@ -382,18 +387,21 @@ pv_prediction_scheduling_msc/
 - Optuna 8 trials/模型/horizon，Rolling 3-fold 时序交叉验证
 - 最终训练 50 epochs（patience=8），多 seed（42/43/44）复现
 
-**关键结果（多 Seed 复现 Mean ± Std）：**
+**关键结果（多 Seed 复现 Mean ± Std，按 RMSE 排名）：**
 
-| Horizon | 最优模型 | MAE | RMSE | R² |
-|---------|---------|-----|------|-----|
-| **h1 (15min)** | **BiLSTM** | **0.0188 ± 0.0000** | 0.0440 | 0.9743 |
-| **h4 (1h)** | **CNN-LSTM** | **0.0254 ± 0.0004** | 0.0561 | 0.9582 |
-| **h16 (4h)** | **CNN-BiLSTM** | **0.0387 ± 0.0002** | 0.0821 | 0.9103 |
+| Horizon | 最优模型 | RMSE | MAE | R² |
+|---------|---------|------|-----|-----|
+| **h1 (15min)** | **CNN-LSTM** | **0.0413 ± 0.0022** | 0.0190 ± 0.0009 | 0.9773 |
+| **h4 (1h)** | **CNN-LSTM** | **0.0561 ± 0.0011** | 0.0254 ± 0.0004 | 0.9582 |
+| **h16 (4h)** | **CNN-BiLSTM** | **0.0821 ± 0.0005** | 0.0387 ± 0.0002 | 0.9103 |
 
-**vs 旧 AFSA-PatchTST (MAE=0.0315, horizon=1)：** BiLSTM 提升 **40%**
+> 排名标准：RMSE（主要）> MAE（次要）> R²（三要），越小越优
+> 注：h16 bilstm 因高方差（CV=12.4%，未经过 Optuna 调参）已排除，最优双向模型为 CNN-BiLSTM
+
+**vs 旧 AFSA-PatchTST (RMSE=0.0561, horizon=1)：** CNN-LSTM 提升 **26.5%**
 
 **结论：**
-- h1 短预测：BiLSTM/LSTM 双向建模最优，CNN-LSTM 次之
+- h1 短预测：CNN-LSTM RMSE 最低，CNN 局部特征提取有效削减大误差
 - h4 中预测：CNN-LSTM 兼顾局部特征与时序建模，综合最优
 - h16 长预测：CNN-BiLSTM 误差最低（RMSE=0.0821），CNN 结构对长 horizon 建模更稳定
 
@@ -517,7 +525,8 @@ raw CSV → EXP-P01 → preprocessed CSV → EXP-P02/P03 → samples → models 
 - `data/prediction/step4_optuna_hybrid/predictions/h{1,4,16}/*.csv`
 - `data/prediction/step4_optuna_hybrid/metrics/h{1,4,16}/*.json`
 - `data/prediction/step4_optuna_hybrid/figures/h{1,4,16}/*.png`
-- `data/prediction/step4_optuna_hybrid/figures/comparison_all_horizons.png`
+- `data/prediction/step4_optuna_hybrid/figures/comparison_*.png`
+- `data/prediction/step4_optuna_hybrid/figures/comparison_summary.md`
 - `data/prediction/step4_optuna_hybrid/reports/EXP-P04_h{1,4,16}_详细实验汇报.md`
 
 ### 日志文件

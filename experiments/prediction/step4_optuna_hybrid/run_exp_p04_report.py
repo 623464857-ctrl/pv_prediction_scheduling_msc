@@ -90,6 +90,15 @@ def _load_old_afsa() -> dict | None:
     return None
 
 
+def _rank_key(m: dict) -> tuple:
+    """Ranking: RMSE (primary, lower better) > MAE (secondary) > R2 (tertiary, higher better)."""
+    return (
+        m["mean"].get("RMSE", float("inf")),
+        m["mean"].get("MAE", float("inf")),
+        -m["mean"].get("R2", 0),
+    )
+
+
 def _summary_table(metrics_list: list[dict], horizon_label: str) -> pd.DataFrame:
     rows = []
     for m in metrics_list:
@@ -105,6 +114,14 @@ def _summary_table(metrics_list: list[dict], horizon_label: str) -> pd.DataFrame
         }
         rows.append(row)
     df = pd.DataFrame(rows)
+
+    # Add rank column: sort by RMSE primary > MAE secondary > R2 tertiary
+    sorted_metrics = sorted(metrics_list, key=_rank_key)
+    rank_map = {MODEL_DISPLAY_NAMES.get(m["model"], m["model"]): i + 1
+                for i, m in enumerate(sorted_metrics)}
+    df.insert(1, "Rank", df["Model"].map(rank_map))
+    df = df.sort_values("Rank")
+
     return df
 
 
@@ -257,21 +274,24 @@ def _gen_markdown_report(horizon: int, horizon_label: str, all_models: list[str]
     # 6. 关键发现
     lines.append("## 6. 关键发现\n\n")
     if metrics_list:
-        best = min(metrics_list, key=lambda x: x["mean"].get("MAE", float("inf")))
+        sorted_metrics = sorted(metrics_list, key=_rank_key)
+        best = sorted_metrics[0]
+        worst = sorted_metrics[-1]
         lines.append(f"- **最优模型**: {MODEL_DISPLAY_NAMES.get(best['model'], best['model'])} "
-                     f"(MAE={best['mean'].get('MAE', 0):.4f} ± {best['std'].get('MAE', 0):.4f})\n")
-        worst = max(metrics_list, key=lambda x: x["mean"].get("MAE", 0))
+                    f"(RMSE={best['mean'].get('RMSE', 0):.4f}, "
+                    f"MAE={best['mean'].get('MAE', 0):.4f} ± {best['std'].get('MAE', 0):.4f}, "
+                    f"R²={best['mean'].get('R2', 0):.4f})\n")
         lines.append(f"- **最差模型**: {MODEL_DISPLAY_NAMES.get(worst['model'], worst['model'])} "
-                     f"(MAE={worst['mean'].get('MAE', 0):.4f})\n")
+                    f"(RMSE={worst['mean'].get('RMSE', 0):.4f})\n")
 
         if old_afsa:
-            old_mae = old_afsa.get("metrics", {}).get("MAE", float("inf"))
-            best_mae = best["mean"].get("MAE", float("inf"))
-            improvement = (old_mae - best_mae) / old_mae * 100 if old_mae else 0
+            old_rmse = old_afsa.get("RMSE", float("inf"))
+            best_rmse = best["mean"].get("RMSE", float("inf"))
+            improvement = (old_rmse - best_rmse) / old_rmse * 100 if old_rmse else 0
             if improvement > 0:
-                lines.append(f"- **相对旧 AFSA 提升**: MAE 降低 {improvement:.1f}%\n")
+                lines.append(f"- **相对旧 AFSA 提升**: RMSE 降低 {improvement:.1f}%\n")
             else:
-                lines.append(f"- **相对旧 AFSA**: MAE 差 {abs(improvement):.1f}%\n")
+                lines.append(f"- **相对旧 AFSA**: RMSE 差 {abs(improvement):.1f}%\n")
 
         lines.append("\n")
     else:
