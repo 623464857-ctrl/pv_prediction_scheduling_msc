@@ -4,9 +4,7 @@
 [INFO] ============================================================
 [INFO] 生成报告  horizon=4 (1h)
 [INFO] 生成图表...
-[INFO]   保存 metrics_mae_bar.png
-[INFO]   保存 metrics_rmse_bar.png
-[INFO]   保存 metrics_r2_bar.png
+[INFO]   保存 h4_metrics_comparison.png
 [INFO]   保存 training_time.png
 [INFO] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
 [INFO] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.

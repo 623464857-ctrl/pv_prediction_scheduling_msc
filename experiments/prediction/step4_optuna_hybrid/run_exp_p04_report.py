@@ -300,12 +300,10 @@ def _gen_markdown_report(horizon: int, horizon_label: str, all_models: list[str]
     # 7. 图表
     lines.append("## 7. 可视化\n\n")
     lines.append("### 7.1 指标对比\n\n")
-    fig_mae = FIGURES_DIR / hs / "metrics_mae_bar.png"
-    fig_rmse = FIGURES_DIR / hs / "metrics_rmse_bar.png"
-    fig_r2 = FIGURES_DIR / hs / "metrics_r2_bar.png"
+    fig_combined = FIGURES_DIR / hs / f"h{horizon}_metrics_comparison.png"
     fig_time = FIGURES_DIR / hs / "training_time.png"
     fig_overlay = FIGURES_DIR / hs / "predictions_overlay.png"
-    for fpath in [fig_mae, fig_rmse, fig_r2, fig_time, fig_overlay]:
+    for fpath in [fig_combined, fig_time, fig_overlay]:
         if fpath.exists():
             rel = fpath.relative_to(PROJECT_ROOT)
             lines.append(f"![{fpath.stem}]({rel})\n\n")
@@ -359,19 +357,29 @@ def generate_figures(horizon: int, horizon_label: str, all_models: list[str], lo
             "RMSE": rmse_vals,
             "R2": r2_vals,
         })
-        for col, out_name in [("MAE", "metrics_mae_bar"), ("RMSE", "metrics_rmse_bar"), ("R2", "metrics_r2_bar")]:
-            out = fig_h / f"{out_name}.png"
-            plt.figure(figsize=(8, 4))
-            bars = plt.bar(display_names, [df_metrics.loc[df_metrics["display_name"] == dn, col].values[0] for dn in display_names])
-            plt.title(f"{col} — {horizon_label}")
-            plt.xticks(rotation=20, ha="right")
-            for bar, val in zip(bars, [df_metrics.loc[df_metrics["display_name"] == dn, col].values[0] for dn in display_names]):
-                plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.002,
-                         f"{val:.3f}", ha="center", va="bottom", fontsize=8)
-            plt.tight_layout()
-            plt.savefig(out, dpi=150)
-            plt.close()
-            logger.info("  保存 %s", out.name)
+        # 指标对比合并图（MAE / RMSE / R² 子图）
+        out_combined = fig_h / f"h{horizon}_metrics_comparison.png"
+        fig_cmp, axes = plt.subplots(1, 3, figsize=(16, 4))
+        for ax, (col, ylabel) in zip(axes, [("MAE", "MAE"), ("RMSE", "RMSE"), ("R2", "R²")]):
+            vals = [df_metrics.loc[df_metrics["display_name"] == dn, col].values[0] for dn in display_names]
+            bars = ax.bar(display_names, vals)
+            ax.set_title(ylabel)
+            ax.set_xticklabels(display_names, rotation=25, ha="right")
+            ax.set_ylabel(ylabel)
+            for bar, val in zip(bars, vals):
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + max(vals) * 0.01,
+                    f"{val:.3f}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=8,
+                )
+        fig_cmp.suptitle(f"Metrics Comparison — {horizon_label}", y=1.02, fontsize=13)
+        plt.tight_layout()
+        fig_cmp.savefig(out_combined, dpi=150)
+        plt.close(fig_cmp)
+        logger.info("  保存 %s", out_combined.name)
 
         # 训练时间
         df_time = pd.DataFrame({

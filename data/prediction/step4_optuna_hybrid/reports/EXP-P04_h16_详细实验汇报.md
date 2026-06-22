@@ -2,7 +2,7 @@
 
 **Horizon: 4h (16 步)**
 
-**生成时间: 2026-06-22 11:32:03**
+**生成时间: 2026-06-22 17:38:41**
 
 
 ---
@@ -118,13 +118,7 @@
 ### 7.1 指标对比
 
 
-![metrics_mae_bar](data\prediction\step4_optuna_hybrid\figures\h16\metrics_mae_bar.png)
-
-
-![metrics_rmse_bar](data\prediction\step4_optuna_hybrid\figures\h16\metrics_rmse_bar.png)
-
-
-![metrics_r2_bar](data\prediction\step4_optuna_hybrid\figures\h16\metrics_r2_bar.png)
+![h16_metrics_comparison](data\prediction\step4_optuna_hybrid\figures\h16\h16_metrics_comparison.png)
 
 
 ![training_time](data\prediction\step4_optuna_hybrid\figures\h16\training_time.png)
