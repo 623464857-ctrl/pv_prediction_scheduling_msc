@@ -84,43 +84,43 @@ fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 fig.suptitle("EXP-P04 跨 Horizon 综合对比分析", fontsize=16, fontweight="bold", y=0.98)
 
 h_positions = np.arange(len(HORIZONS))
-bar_width = 0.6
-models_filtered = [m for m in MODELS if m != "bilstm"]  # main 4 for clean bars
-MODEL_LABELS_F = ["LSTM", "CNN-LSTM", "CNN-BiLSTM", "MiniPatchTST"]
-COLORS_F = ["#1f77b4", "#2ca02c", "#d62728", "#9467bd"]
+bar_width = 0.7
+models_bar = MODELS.copy()  # 包含所有模型包括bilstm
+MODEL_LABELS_F = MODEL_LABELS.copy()  # ["LSTM", "BiLSTM", "CNN-LSTM", "CNN-BiLSTM", "MiniPatchTST"]
+COLORS_F = [MODEL_COLORS[m] for m in models_bar]
 
 # ─ Panel A: RMSE ───────────────────────────────────
 ax = axes[0, 0]
-for i, model in enumerate(models_filtered):
+for i, model in enumerate(models_bar):
     means = [metrics[model][hs]["rmse"] for hs in HORIZONS]
     stds = [metrics[model][hs]["rmse_std"] for hs in HORIZONS]
-    x = h_positions + i * bar_width / len(models_filtered) - bar_width * 0.5 + bar_width / len(models_filtered) / 2
-    bars = ax.bar(x, means, bar_width / len(models_filtered),
+    x = h_positions + i * bar_width / len(models_bar) - bar_width * 0.5 + bar_width / len(models_bar) / 2
+    bars = ax.bar(x, means, bar_width / len(models_bar),
                   label=MODEL_LABELS_F[i], color=COLORS_F[i], alpha=0.85)
     ax.errorbar(x, means, yerr=stds, fmt="none", color="black", capsize=3, linewidth=1)
     for bar, val in zip(bars, means):
         ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.002,
-                f"{val:.4f}", ha="center", va="bottom", fontsize=7, rotation=30)
+                f"{val:.4f}", ha="center", va="bottom", fontsize=6, rotation=30)
 ax.set_xticks(h_positions)
 ax.set_xticklabels(HORIZON_LABELS, fontsize=10)
 ax.set_ylabel("RMSE (标准化单位)", fontsize=11)
 ax.set_title("A. RMSE 对比 (越小越好)", fontsize=12, fontweight="bold")
-ax.legend(fontsize=9, loc="upper left")
+ax.legend(fontsize=8, loc="upper left")
 ax.grid(axis="y", alpha=0.3)
 ax.set_ylim(0, 0.085)
 
 # ─ Panel B: R2 ─────────────────────────────────────
 ax = axes[0, 1]
-for i, model in enumerate(models_filtered):
+for i, model in enumerate(models_bar):
     means = [metrics[model][hs]["r2"] for hs in HORIZONS]
-    x = h_positions + i * bar_width / len(models_filtered) - bar_width * 0.5 + bar_width / len(models_filtered) / 2
-    ax.bar(x, means, bar_width / len(models_filtered),
+    x = h_positions + i * bar_width / len(models_bar) - bar_width * 0.5 + bar_width / len(models_bar) / 2
+    ax.bar(x, means, bar_width / len(models_bar),
            label=MODEL_LABELS_F[i], color=COLORS_F[i], alpha=0.85)
 ax.set_xticks(h_positions)
 ax.set_xticklabels(HORIZON_LABELS, fontsize=10)
 ax.set_ylabel("R2 (1.0=完美)", fontsize=11)
 ax.set_title("B. R2 对比 (越大越好)", fontsize=12, fontweight="bold")
-ax.legend(fontsize=9, loc="lower left")
+ax.legend(fontsize=8, loc="lower left")
 ax.grid(axis="y", alpha=0.3)
 ax.set_ylim(0.85, 1.0)
 ax.axhline(y=0.9, color="red", linestyle="--", linewidth=1, alpha=0.5, label="R2=0.9 基线")
