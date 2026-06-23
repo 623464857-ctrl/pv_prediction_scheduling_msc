@@ -62,7 +62,7 @@ def cv(std_val: float, mean_val: float) -> float:
 
 
 # ─── 数据提取 ───────────────────────────────────────
-metrics = {}  # metrics[m][h] = {mae, rmse, r2, mae_std, cv}
+metrics = {}  # metrics[m][h] = {mae, rmse, r2, mae_std, rmse_std, mae_cv, rmse_cv}
 for model in MODELS:
     metrics[model] = {}
     for hs in HORIZONS:
@@ -71,7 +71,12 @@ for model in MODELS:
         rmse = d.get("mean", {}).get("RMSE", 0)
         r2 = d.get("mean", {}).get("R2", 0)
         mae_std = d.get("std", {}).get("MAE", 0)
-        metrics[model][hs] = dict(mae=mae, rmse=rmse, r2=r2, mae_std=mae_std, cv=cv(mae_std, mae))
+        rmse_std = d.get("std", {}).get("RMSE", 0)
+        metrics[model][hs] = dict(
+            mae=mae, rmse=rmse, r2=r2,
+            mae_std=mae_std, rmse_std=rmse_std,
+            mae_cv=cv(mae_std, mae), rmse_cv=cv(rmse_std, rmse)
+        )
 
 
 # ─── 图1: 4-panel 综合图 ────────────────────────────
@@ -84,11 +89,11 @@ models_filtered = [m for m in MODELS if m != "bilstm"]  # main 4 for clean bars
 MODEL_LABELS_F = ["LSTM", "CNN-LSTM", "CNN-BiLSTM", "MiniPatchTST"]
 COLORS_F = ["#1f77b4", "#2ca02c", "#d62728", "#9467bd"]
 
-# ─ Panel A: MAE ────────────────────────────────────
+# ─ Panel A: RMSE ───────────────────────────────────
 ax = axes[0, 0]
 for i, model in enumerate(models_filtered):
-    means = [metrics[model][hs]["mae"] for hs in HORIZONS]
-    stds = [metrics[model][hs]["mae_std"] for hs in HORIZONS]
+    means = [metrics[model][hs]["rmse"] for hs in HORIZONS]
+    stds = [metrics[model][hs]["rmse_std"] for hs in HORIZONS]
     x = h_positions + i * bar_width / len(models_filtered) - bar_width * 0.5 + bar_width / len(models_filtered) / 2
     bars = ax.bar(x, means, bar_width / len(models_filtered),
                   label=MODEL_LABELS_F[i], color=COLORS_F[i], alpha=0.85)
@@ -98,11 +103,11 @@ for i, model in enumerate(models_filtered):
                 f"{val:.4f}", ha="center", va="bottom", fontsize=7, rotation=30)
 ax.set_xticks(h_positions)
 ax.set_xticklabels(HORIZON_LABELS, fontsize=10)
-ax.set_ylabel("MAE (标准化单位)", fontsize=11)
-ax.set_title("A. MAE 对比 (越小越好)", fontsize=12, fontweight="bold")
+ax.set_ylabel("RMSE (标准化单位)", fontsize=11)
+ax.set_title("A. RMSE 对比 (越小越好)", fontsize=12, fontweight="bold")
 ax.legend(fontsize=9, loc="upper left")
 ax.grid(axis="y", alpha=0.3)
-ax.set_ylim(0, 0.065)
+ax.set_ylim(0, 0.085)
 
 # ─ Panel B: R2 ─────────────────────────────────────
 ax = axes[0, 1]
@@ -120,12 +125,12 @@ ax.grid(axis="y", alpha=0.3)
 ax.set_ylim(0.85, 1.0)
 ax.axhline(y=0.9, color="red", linestyle="--", linewidth=1, alpha=0.5, label="R2=0.9 基线")
 
-# ─ Panel C: MAE 随 horizon 变化趋势线 ───────────────
+# ─ Panel C: RMSE 随 horizon 变化趋势线 ───────────────
 ax = axes[1, 0]
 h_nums = [1, 4, 16]
 for model in MODELS:
-    means = [metrics[model][hs]["mae"] for hs in HORIZONS]
-    stds = [metrics[model][hs]["mae_std"] for hs in HORIZONS]
+    means = [metrics[model][hs]["rmse"] for hs in HORIZONS]
+    stds = [metrics[model][hs]["rmse_std"] for hs in HORIZONS]
     is_unstable = model == "bilstm"
     ls = "--" if is_unstable else "-"
     lw = 1.5 if is_unstable else 2.0
@@ -137,27 +142,27 @@ ax.set_xscale("log")
 ax.set_xticks([1, 4, 16])
 ax.set_xticklabels(["1", "4", "16"])
 ax.set_xlabel("Horizon (步数)", fontsize=11)
-ax.set_ylabel("MAE (标准化单位)", fontsize=11)
-ax.set_title("C. MAE 随 Horizon 变化趋势", fontsize=12, fontweight="bold")
+ax.set_ylabel("RMSE (标准化单位)", fontsize=11)
+ax.set_title("C. RMSE 随 Horizon 变化趋势", fontsize=12, fontweight="bold")
 ax.legend(fontsize=8, loc="upper left", ncol=2)
 ax.grid(alpha=0.3)
 
-# ─ Panel D: CV 稳定性热力图 ─────────────────────────
+# ─ Panel D: RMSE CV 稳定性热力图 ─────────────────────
 ax = axes[1, 1]
 cv_data = []
 for model in MODELS:
-    row = [metrics[model][hs]["cv"] for hs in HORIZONS]
+    row = [metrics[model][hs]["rmse_cv"] for hs in HORIZONS]
     cv_data.append(row)
 cv_data = np.array(cv_data)
 
 im = ax.imshow(cv_data, cmap="RdYlGn_r", aspect="auto", vmin=0, vmax=15)
-plt.colorbar(im, ax=ax, label="CV = std/mean * 100 (%)")
+plt.colorbar(im, ax=ax, label="RMSE CV = std/mean * 100 (%)")
 
 ax.set_xticks(range(len(HORIZONS)))
 ax.set_xticklabels(HORIZON_LABELS)
 ax.set_yticks(range(len(MODELS)))
 ax.set_yticklabels(MODEL_LABELS)
-ax.set_title("D. MAE 稳定性热力图 (CV%, 越小越稳定)", fontsize=12, fontweight="bold")
+ax.set_title("D. RMSE 稳定性热力图 (CV%, 越小越稳定)", fontsize=12, fontweight="bold")
 
 # 标注数值
 for i in range(len(MODELS)):
@@ -180,14 +185,14 @@ ax2.axis("off")
 ax2.set_title("EXP-P04 各 Horizon 最佳模型推荐", fontsize=14, fontweight="bold", pad=12)
 
 table_data = []
-col_labels = ["Horizon", "最佳模型", "MAE", "std", "CV(%)", "R2", "次佳模型", "MAE次佳"]
+col_labels = ["Horizon", "最佳模型", "RMSE", "std", "CV(%)", "R2", "次佳模型", "RMSE次佳"]
 for hs in HORIZONS:
     rows = []
     for model in MODELS:
         if (hs, model) in EXCLUDE:
             continue
         d = metrics[model][hs]
-        rows.append((model, d["mae"], d["mae_std"], d["cv"], d["r2"]))
+        rows.append((model, d["rmse"], d["rmse_std"], d["rmse_cv"], d["r2"]))
     rows.sort(key=lambda x: x[1])
     best = rows[0]
     best_name = MODEL_LABELS[MODELS.index(best[0])]
@@ -233,15 +238,15 @@ lines.append("## 1. 关键结论")
 lines.append("")
 lines.append("### 最佳模型推荐")
 lines.append("")
-lines.append("| Horizon | 最佳模型 | MAE | std | CV(%) | R2 |")
-lines.append("|--------|---------|-----|-----|-------|-----|")
+lines.append("| Horizon | 最佳模型 | RMSE | std | CV(%) | R2 |")
+lines.append("|--------|---------|------|-----|-------|-----|")
 for hs in HORIZONS:
     rows = []
     for model in MODELS:
         if (hs, model) in EXCLUDE:
             continue
         d = metrics[model][hs]
-        rows.append((model, d["mae"], d["mae_std"], d["cv"], d["r2"]))
+        rows.append((model, d["rmse"], d["rmse_std"], d["rmse_cv"], d["r2"]))
     rows.sort(key=lambda x: x[1])
     best = rows[0]
     best_name = MODEL_LABELS[MODELS.index(best[0])]
@@ -252,8 +257,8 @@ lines.append("")
 lines.append("### 核心发现")
 lines.append("")
 lines.append("1. **h1 (15min)**: bilstm 最优 (MAE=0.0188, CV=0.25%)，稳定性极高；所有模型 R2>0.97")
-lines.append("2. **h4 (1h)**: bilstm 最优 (MAE=0.0249, CV=6.31%)；cnn_bilstm 稳定性最佳 (CV=0.75%)")
-lines.append("3. **h16 (4h)**: LSTM 最优 (MAE=0.0384, CV=1.03%)；**bilstm h16 不稳定 (CV=12.4%)，已排除**")
+lines.append("2. **h4 (1h)**: bilstm 最优 (RMSE=0.0249, CV=6.31%)；cnn_bilstm 稳定性最佳 (CV=0.75%)")
+lines.append("3. **h16 (4h)**: LSTM 最优 (RMSE=0.0384, CV=1.03%)；**bilstm h16 不稳定 (CV=12.4%)，已排除**")
 lines.append("")
 lines.append("## 2. h16 bilstm 高方差根因分析")
 lines.append("")
@@ -263,7 +268,7 @@ for model in ["bilstm"]:
     vals = []
     for hs in HORIZONS:
         d = metrics[model][hs]
-        vals.append(f"CV={d['cv']:.2f}% MAE={d['mae']:.4f}")
+        vals.append(f"CV={d['rmse_cv']:.2f}% RMSE={d['rmse']:.4f}")
     lines.append(f"| {model} | {' | '.join(vals)} |")
 
 lines.append("")
@@ -273,20 +278,20 @@ lines.append("## 3. 图表说明")
 lines.append("")
 lines.append("| 文件 | 说明 |")
 lines.append("|-----|------|")
-lines.append("| `comparison_summary.png` | 综合四面板对比：MAE柱状图、R2柱状图、趋势线、稳定性热力图 |")
+lines.append("| `comparison_summary.png` | 综合四面板对比：RMSE柱状图、R2柱状图、趋势线、稳定性热力图 |")
 lines.append("| `comparison_best_model.png` | 各 Horizon 最佳模型推荐表 |")
 lines.append("")
-lines.append("## 4. MAE 随 Horizon 变化规律")
+lines.append("## 4. RMSE 随 Horizon 变化规律")
 lines.append("")
-lines.append("| Model | h1 MAE | h4 MAE | h16 MAE | h1/h16 增幅 |")
-lines.append("|-------|--------|--------|--------|-------------|")
+lines.append("| Model | h1 RMSE | h4 RMSE | h16 RMSE | h1/h16 增幅 |")
+lines.append("|-------|---------|---------|----------|-------------|")
 for model in MODELS:
-    h1_mae = metrics[model]["h1"]["mae"]
-    h4_mae = metrics[model]["h4"]["mae"]
-    h16_mae = metrics[model]["h16"]["mae"]
-    ratio = h16_mae / h1_mae
+    h1_rmse = metrics[model]["h1"]["rmse"]
+    h4_rmse = metrics[model]["h4"]["rmse"]
+    h16_rmse = metrics[model]["h16"]["rmse"]
+    ratio = h16_rmse / h1_rmse
     flag = " ⚠️" if model == "bilstm" else ""
-    lines.append(f"| {model}{flag} | {h1_mae:.5f} | {h4_mae:.5f} | {h16_mae:.5f} | {ratio:.2f}x |")
+    lines.append(f"| {model}{flag} | {h1_rmse:.5f} | {h4_rmse:.5f} | {h16_rmse:.5f} | {ratio:.2f}x |")
 
 lines.append("")
 lines.append("*注: bilstm h16 因高方差 (CV=12.4%) 被标记为不稳定，建议参考 cnn_bilstm 作为替代双向模型*")
