@@ -1,0 +1,18 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P05_h1_evaluation.log
+[INFO] persistence daytime RMSE=0.0633
+[INFO] moving_average daytime RMSE=0.8669
+[INFO] ridge daytime RMSE=0.0515
+[INFO] xgboost daytime RMSE=0.0466
+[INFO] lightgbm daytime RMSE=0.0465
+[INFO] lstm_residual daytime RMSE=0.0458
+[INFO] bilstm_residual daytime RMSE=0.0460
+[INFO] cnn_lstm_residual daytime RMSE=0.0468
+[INFO] cnn_bilstm_residual daytime RMSE=0.0465
+[INFO] patchtst_residual daytime RMSE=0.0473
+[INFO] lstm_residual inference 0.004 ms/sample
+[INFO] bilstm_residual inference 0.011 ms/sample
+[INFO] cnn_lstm_residual inference 0.005 ms/sample
+[INFO] cnn_bilstm_residual inference 0.011 ms/sample
+[INFO] patchtst_residual inference 0.010 ms/sample
+[INFO] 评价完成
+[INFO] Step6 Optuna-AFSA 混合搜索

@@ -1,0 +1,19 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P05_h16_prepare_samples.log
+[INFO] ============================================================
+[INFO] EXP-P05 Step2 特征增强样本构造 horizon=16
+[INFO] 总样本: 70129  X=(70129, 16, 27)  y=(70129, 16)
+[INFO] 保存 X_train_seq.npy shape=(49089, 16, 27)
+[INFO] 保存 X_val_seq.npy shape=(10520, 16, 27)
+[INFO] 保存 X_test_seq.npy shape=(10520, 16, 27)
+[INFO] 保存 y_train.npy shape=(49089, 16)
+[INFO] 保存 y_val.npy shape=(10520, 16)
+[INFO] 保存 y_test.npy shape=(10520, 16)
+[INFO] 保存 y_train_raw.npy shape=(49089, 16)
+[INFO] 保存 y_val_raw.npy shape=(10520, 16)
+[INFO] 保存 y_test_raw.npy shape=(10520, 16)
+[INFO] 保存 y_last_train.npy shape=(49089, 1)
+[INFO] 保存 y_last_val.npy shape=(10520, 1)
+[INFO] 保存 y_last_test.npy shape=(10520, 1)
+[INFO] 保存 daylight_flag_test.npy shape=(10520, 1)
+[INFO] 完成，耗时 1.2s
+[INFO] Step1 强基线

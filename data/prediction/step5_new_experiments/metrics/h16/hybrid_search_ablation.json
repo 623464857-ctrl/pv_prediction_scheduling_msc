@@ -1,0 +1,110 @@
+{
+  "S1": {
+    "strategy": "S1",
+    "trials": 20,
+    "best": {
+      "RMSE": 0.299780396479835,
+      "MAE": 0.299780396479835,
+      "latency_ms": 0.0022720703128698005,
+      "params": 20112.0,
+      "train_params": {
+        "batch_size": 256,
+        "lr": 0.002,
+        "hidden": 32,
+        "layers": 2,
+        "dropout": 0.3
+      },
+      "composite_score": 0.04278053790719323
+    }
+  },
+  "S2": {
+    "strategy": "S2",
+    "trials": 20,
+    "best": {
+      "RMSE": 0.29984246496319106,
+      "MAE": 0.29984246496319106,
+      "latency_ms": 0.0022061718652821583,
+      "params": 20112.0,
+      "train_params": {
+        "batch_size": 256,
+        "lr": 0.002,
+        "hidden": 32,
+        "layers": 2,
+        "dropout": 0.3
+      },
+      "composite_score": 0.014318000474879494
+    }
+  },
+  "S3": {
+    "strategy": "S3",
+    "trials": 20,
+    "best": {
+      "RMSE": 0.29709240615518284,
+      "MAE": 0.29709240615518284,
+      "latency_ms": 0.0017419921874761712,
+      "params": 11664.0,
+      "train_params": {
+        "batch_size": 128,
+        "lr": 0.002,
+        "hidden": 32,
+        "layers": 1,
+        "dropout": 0.1
+      },
+      "composite_score": 0.0006119287231882328
+    }
+  },
+  "S4": {
+    "strategy": "S4",
+    "trials": 30,
+    "best": {
+      "RMSE": 0.30154659652689736,
+      "MAE": 0.30154659652689736,
+      "latency_ms": 0.0020606054675909036,
+      "params": 11664.0,
+      "train_params": {
+        "batch_size": 128,
+        "lr": 0.001,
+        "hidden": 32,
+        "layers": 1,
+        "dropout": 0.3
+      },
+      "composite_score": 0.008172538440875378
+    }
+  },
+  "S5": {
+    "strategy": "S5",
+    "trials": 30,
+    "best": {
+      "RMSE": 0.2954107757163049,
+      "MAE": 0.2954107757163049,
+      "latency_ms": 0.0049510937458308035,
+      "params": 87696.0,
+      "train_params": {
+        "batch_size": 128,
+        "lr": 0.002,
+        "hidden": 128,
+        "layers": 1,
+        "dropout": 0.1
+      },
+      "composite_score": 0.0868984800081202
+    }
+  },
+  "S6": {
+    "strategy": "S6",
+    "trials": 18,
+    "best": {
+      "RMSE": 0.2993125519340987,
+      "MAE": 0.2993125519340987,
+      "latency_ms": 0.0025392187552597534,
+      "params": 28816.0,
+      "train_params": {
+        "batch_size": 128,
+        "lr": 0.001,
+        "hidden": 64,
+        "layers": 1,
+        "dropout": 0.3
+      },
+      "composite_score": 0.018378501798977376
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "S1": {
+    "strategy": "S1",
+    "trials": 20,
+    "best": {
+      "RMSE": 0.20901418185396303,
+      "MAE": 0.20901418185396303,
+      "latency_ms": 0.0019131249928250325,
+      "params": 11268.0,
+      "train_params": {
+        "batch_size": 128,
+        "lr": 0.002,
+        "hidden": 32,
+        "layers": 1,
+        "dropout": 0.1
+      },
+      "composite_score": 0.00699448778986058
+    }
+  }
+}

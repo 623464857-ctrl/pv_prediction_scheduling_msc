@@ -12,6 +12,7 @@
 | EXP-P02 | 五类基础模型对比 | `experiments/prediction/step2_baseline_models/` | ✅ 已完成 |
 | EXP-P03 | 混合深度学习模型对比 | `experiments/prediction/step3_hybrid_models/` | ✅ 已完成 |
 | EXP-P04 | Optuna 超参优化与多 Horizon 预测 | `experiments/prediction/step4_optuna_hybrid/` | ✅ 已完成 |
+| EXP-P05 | 新增实验与综合分析 | `experiments/prediction/step5_new_experiments/run_exp_p05_main.py` | 🔄 进行中 |
 
 ## 快速开始
 
@@ -45,6 +46,16 @@ python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_final_train --h
 python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_reproduce --horizon 1
 python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_report --horizon 1
 # (--horizon 可选 1/4/16，分别对应 15min/1h/4h 预测)
+
+# Step 5: 新增实验与综合分析
+python experiments/prediction/step5_new_experiments/run_exp_p05_main.py --horizon 1
+# (--horizon 可选 1/4/16)
+
+# Step 5: 生成报告图表（在 report 之后运行）
+python experiments/prediction/step5_new_experiments/run_exp_p05_figures.py --horizon 1
+# 生成跨 horizon 综合对比图（需在 h1/h4/h16 全部运行后执行）
+# 产出: comparison_summary.png / comparison_best_model.png / inference_benchmark_all_horizons.png
+python experiments/prediction/step5_new_experiments/run_exp_p05_figures.py --horizon 1 --cross
 ```
 
 ## 目录结构
@@ -275,6 +286,18 @@ pv_prediction_scheduling_msc/
 │   │       ├── run_exp_p04_analysis.py         # 跨 Horizon 对比分析
 │   │       └── run_exp_p04_summary.py          # 综合对比可视化
 │   │
+│   │   └── step5_new_experiments/             # EXP-P05 新增实验与综合分析
+│   │       ├── exp_p05_common.py               # 共享路径/配置/指标/可视化工具
+│   │       ├── baselines.py                     # 基线模型（Persistence / Ridge / XGB / LGB）
+│   │       ├── exp_p05_models.py               # 残差版模型定义（LSTM/BiLSTM/CNN-LSTM/CNN-BiLSTM/PatchTST）
+│   │       ├── exp_p05_features.py             # 特征工程增强（lag/rolling/ramp/daylight）
+│   │       ├── exp_p05_residual.py            # 残差预测建模工具
+│   │       ├── run_exp_p05_main.py            # 主入口（一键运行所有实验）
+│   │       ├── run_exp_p05_baselines.py       # 基线模型训练与评估
+│   │       ├── run_exp_p05_residual_train.py  # 残差版模型训练
+│   │       ├── run_exp_p05_evaluation.py      # 分段评价与推理计时
+│   │       └── run_exp_p05_report.py          # 报告生成
+│   │
 │   └── scheduling/                              # 预留调度任务目录
 │       └── README.md
 │
@@ -405,6 +428,63 @@ pv_prediction_scheduling_msc/
 - h4 中预测：CNN-LSTM 兼顾局部特征与时序建模，综合最优
 - h16 长预测：CNN-BiLSTM 误差最低（RMSE=0.0821），CNN 结构对长 horizon 建模更稳定
 
+### EXP-P05: 新增实验与综合分析
+
+**实验设计：**
+- 实验名：`EXP-P05`，对应脚本目录 `experiments/prediction/step5_new_experiments/`
+- 主入口：`run_exp_p05_main.py`
+- 核心目标：补充强基线、强化特征工程、验证残差预测建模、统一白天/夜间分段评价与推理时间测量
+- 评价标准：**RMSE 为主，MAE 为辅**，RMSE 相近时再用 MAE 细排
+- 默认预测步长：h1 = 15min；脚本支持 `--horizon 1 / 4 / 16`
+
+**主实验对比表格式：**
+
+| Model | Horizon | RMSE ↓ | MAE ↓ | MAPE ↓ | R² ↑ | nRMSE ↓ |
+|-------|---------|--------|-------|--------|------|---------|
+| Persistence | 15min | - | - | - | - | - |
+| Moving Average | 15min | - | - | - | - | - |
+| Ridge Regression | 15min | - | - | - | - | - |
+| LSTM | 15min | - | - | - | - | - |
+| BiLSTM | 15min | - | - | - | - | - |
+| CNN-LSTM | 15min | - | - | - | - | - |
+| CNN-BiLSTM | 15min | - | - | - | - | - |
+| PatchTST | 15min | - | - | - | - | - |
+| Proposed | 15min | - | - | - | - | - |
+
+**关键子实验：**
+
+1. **补充强基线**
+- Persistence、Moving Average、Ridge、XGBoost、LightGBM
+- 必须与深度模型使用相同特征版本，确保横向可比
+
+2. **特征工程增强**
+- lag 特征、rolling mean、rolling std、ramp 特征
+- daylight flag、sin/cos hour、sin/cos dayofyear
+- 固定特征版本号后，所有模型统一接入
+
+3. **残差预测建模**
+- 目标改为：`Δy = y_future - y_last`，最终输出 `y_hat_future = y_last + Δy_hat`
+- 覆盖模型：LSTM、BiLSTM、CNN-LSTM、CNN-BiLSTM、PatchTST
+- 主评价：残差版 RMSE < 直接预测版 RMSE
+
+4. **白天与夜间分段评价**
+- Daytime-only 为主表：`daylight_flag = 1` 或 `y_true > 0.01 * capacity`
+- All-day 为附表，用于补充对比
+
+5. **推理时间标准化重测**
+- 固定 `batch_size = 512` 或 `1024`
+- 仅测 `model.forward`
+- warm-up 10 次，正式重复 100 次，GPU 加 `torch.cuda.synchronize()`
+- 报告：`Total inference time`、`ms/sample`、`samples/s`、`Params`、`FLOPs`
+
+6. **Optuna-AFSA 混合搜索**
+- 多目标函数：`Score = α₁ × normalized_RMSE + α₂ × normalized_MAE + β₁ × normalized_latency + β₂ × normalized_params`
+- 消融实验：S1 Random Search / S2 Optuna / S3 AFSA only / S4 Optuna-initialized AFSA / S5 AFSA-refined Optuna / S6 Multi-objective Hybrid
+- 搜索目标以 raw-scale RMSE 为主，MAE 为辅
+
+**执行顺序：**
+- Step 2（特征增强） → Step 1（强基线） → Step 3（残差预测） → Step 4（分段评价） → Step 5（计时重测） → Step 6（混合搜索）
+
 ## 核心代码模块
 
 ### exp_p03_common.py
@@ -486,7 +566,7 @@ raw CSV → EXP-P01 → preprocessed CSV → EXP-P02/P03 → samples → models 
 
 ## 命名约定
 
-- 实验编号：EXP-P01, EXP-P02, EXP-P03, EXP-P04
+- 实验编号：EXP-P01, EXP-P02, EXP-P03, EXP-P04, EXP-P05
 - 脚本命名：`run_exp_<编号>_<功能>.py`
 - 模块命名：`exp_<编号>_<模块名>.py`
 - Horizon 标识：`h1` (15min) / `h4` (1h) / `h16` (4h)
@@ -534,3 +614,4 @@ raw CSV → EXP-P01 → preprocessed CSV → EXP-P02/P03 → samples → models 
 - `logs/prediction/step2_baseline_models/EXP-P02_*.log`
 - `logs/prediction/step3_hybrid_models/EXP-P03_*.log`
 - `logs/prediction/step4_optuna_hybrid/EXP-P04_h{1,4,16}_{prepare,optuna|final|reproduce|report}.log`
+- `logs/prediction/step5_new_experiments/EXP-P05_h{1,4,16}_*.log`

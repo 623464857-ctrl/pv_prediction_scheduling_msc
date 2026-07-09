@@ -1,0 +1,10 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P05_h4_figures.log
+[INFO] EXP-P05 图表生成 horizon=4
+[INFO] 生成 horizon=4 图表...
+[INFO] 保存 h4_metrics_comparison.png
+[INFO] 保存 h4_prediction_overlay.png
+[INFO] 保存 h4_residual_comparison.png
+[INFO] 保存 h4_inference_benchmark.png
+[INFO] 保存 h4_loss_overview.png
+[INFO] 已更新报告: EXP-P05_h4_report.md
+[INFO] horizon=4 完成，耗时 1.33s
