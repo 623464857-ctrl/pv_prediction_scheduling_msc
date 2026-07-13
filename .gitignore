@@ -1,0 +1,5 @@
+# Large data files
+data/prediction/step1_preprocessing/processed/solar_stations_long.csv
+data/prediction/step5_new_experiments/samples/h1/X_train_seq.npy
+data/prediction/step5_new_experiments/samples/h4/X_train_seq.npy
+data/prediction/step5_new_experiments/samples/h16/X_train_seq.npy
