@@ -433,54 +433,49 @@ pv_prediction_scheduling_msc/
 **实验设计：**
 - 实验名：`EXP-P05`，对应脚本目录 `experiments/prediction/step5_new_experiments/`
 - 主入口：`run_exp_p05_main.py`
-- 核心目标：补充强基线、强化特征工程、验证残差预测建模、统一白天/夜间分段评价与推理时间测量
+- 核心目标：解决 Step3/4 遗留问题，验证残差预测和 Optuna-AFSA 混合搜索能否提高模型精度
 - 评价标准：**RMSE 为主，MAE 为辅**，RMSE 相近时再用 MAE 细排
 - 默认预测步长：h1 = 15min；脚本支持 `--horizon 1 / 4 / 16`
 
-**主实验对比表格式：**
-
-| Model | Horizon | RMSE ↓ | MAE ↓ | MAPE ↓ | R² ↑ | nRMSE ↓ |
-|-------|---------|--------|-------|--------|------|---------|
-| Persistence | 15min | - | - | - | - | - |
-| Moving Average | 15min | - | - | - | - | - |
-| Ridge Regression | 15min | - | - | - | - | - |
-| LSTM | 15min | - | - | - | - | - |
-| BiLSTM | 15min | - | - | - | - | - |
-| CNN-LSTM | 15min | - | - | - | - | - |
-| CNN-BiLSTM | 15min | - | - | - | - | - |
-| PatchTST | 15min | - | - | - | - | - |
-| Proposed | 15min | - | - | - | - | - |
+**待验证问题：**
+1. 残差预测是否有效；
+2. 树模型（XGBoost/LightGBM）在光伏预测中表现如何；
+3. 白天/夜间分段评价对模型选择有何影响；
+4. Optuna-AFSA混合搜索能否兼顾精度与效率。
 
 **关键子实验：**
 
-1. **补充强基线**
-- Persistence、Moving Average、Ridge、XGBoost、LightGBM
-- 必须与深度模型使用相同特征版本，确保横向可比
+1. **特征工程增强**
+- 在原有特征基础上，新增功率滞后、滚动统计和多尺度 Ramp 特征，输入维度从 13 维扩展至 26 维
+- 特征包含：`power_pu_lag_0/1/2/4/8/16`、`power_ramp_15m/60m/120m_pu`、`roll_1h/2h_mean/std/max/min`
+- 保留辐照、气象、时间编码、daylight flag、data quality 等基础特征
 
-2. **特征工程增强**
-- lag 特征、rolling mean、rolling std、ramp 特征
-- daylight flag、sin/cos hour、sin/cos dayofyear
-- 固定特征版本号后，所有模型统一接入
+2. **强基线模型**
+- Persistence / Moving Average / Ridge Regression / XGBoost / LightGBM
+- 树模型输入为展平的 16×26=416 维特征向量
 
 3. **残差预测建模**
-- 目标改为：`Δy = y_future - y_last`，最终输出 `y_hat_future = y_last + Δy_hat`
+- 不直接预测 `y(t+H)`，而是预测变化量 `Δy = y(t+H) - y(t)`
+- 最终重构：`y_hat_future = y(t) + Δy_hat`
 - 覆盖模型：LSTM、BiLSTM、CNN-LSTM、CNN-BiLSTM、PatchTST
-- 主评价：残差版 RMSE < 直接预测版 RMSE
+- 统一训练配置：Adam、lr=0.001、batch_size=256、max_epoch=50、patience=8、seed=42
 
 4. **白天与夜间分段评价**
 - Daytime-only 为主表：`daylight_flag = 1` 或 `y_true > 0.01 * capacity`
 - All-day 为附表，用于补充对比
 
 5. **推理时间标准化重测**
-- 固定 `batch_size = 512` 或 `1024`
-- 仅测 `model.forward`
-- warm-up 10 次，正式重复 100 次，GPU 加 `torch.cuda.synchronize()`
-- 报告：`Total inference time`、`ms/sample`、`samples/s`、`Params`、`FLOPs`
+- 固定 `batch_size = 512`
+- 只测 `model.forward()`，不包含 DataLoader、CSV保存、反归一化
+- Warm-up 10 次，正式重复 100 次，记录 mean ± std
+- GPU 使用 `torch.cuda.synchronize()`
+- 报告：`ms/sample`、`samples/s`、`Params`
 
 6. **Optuna-AFSA 混合搜索**
-- 多目标函数：`Score = α₁ × normalized_RMSE + α₂ × normalized_MAE + β₁ × normalized_latency + β₂ × normalized_params`
-- 消融实验：S1 Random Search / S2 Optuna / S3 AFSA only / S4 Optuna-initialized AFSA / S5 AFSA-refined Optuna / S6 Multi-objective Hybrid
-- 搜索目标以 raw-scale RMSE 为主，MAE 为辅
+- Optuna TPE + MedianPruner 剪枝
+- AFSA 觅食/聚群/追尾行为
+- 消融实验：S1 Random / S2 Optuna TPE / S3 AFSA / S4 Optuna→AFSA / S5 AFSA→Optuna / S6 Hybrid
+- 单模型（CNN-LSTM）+ H16 快速验证，最多 15 epoch
 
 **执行顺序：**
 - Step 2（特征增强） → Step 1（强基线） → Step 3（残差预测） → Step 4（分段评价） → Step 5（计时重测） → Step 6（混合搜索）
