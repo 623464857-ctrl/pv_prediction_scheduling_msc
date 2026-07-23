@@ -1,0 +1,7 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P06_h4_residual_train.log
+[INFO] lstm (optuna) RMSE=0.0490 nRMSE=1.1103 R2=0.9681 R2_scaled=0.9681 | 搜索策略=S2  3fold_Val=0.6972  3fold_Test=1.1916
+[INFO] bilstm (optuna) RMSE=0.0488 nRMSE=1.1053 R2=0.9683 R2_scaled=0.9683 | 搜索策略=S2  3fold_Val=0.6893  3fold_Test=1.2172
+[INFO] cnn_lstm (optuna) RMSE=0.0483 nRMSE=1.0948 R2=0.9689 R2_scaled=0.9689 | 搜索策略=S2  3fold_Val=0.6947  3fold_Test=1.2541
+[INFO] cnn_bilstm (optuna) RMSE=0.0475 nRMSE=1.0766 R2=0.9700 R2_scaled=0.9700 | 搜索策略=S3  3fold_Val=0.6901  3fold_Test=1.1936
+[INFO] patchtst (optuna) RMSE=0.0499 nRMSE=1.1303 R2=0.9669 R2_scaled=0.9669 | 搜索策略=S2  3fold_Val=0.6998  3fold_Test=1.1925
+[INFO] 残差训练完成，结果已保存: data\prediction\step5_new_experiments\metrics\h4\residual_optuna_metrics.json
