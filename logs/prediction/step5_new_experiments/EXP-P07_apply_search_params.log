@@ -1,5 +1,0 @@
-[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P07_apply_search_params.log
-[INFO] === EXP-P07: H16 cnn_lstm 残差预测 (S1-S6) ===
-[INFO] --- 处理策略 S1 ---
-[INFO] [S1] 开始 3-fold CV  (batch=256  lr=0.0020  hidden=32  layers=2  dropout=0.3)
-[INFO]   Fold 0: RMSE=0.0841  MAE=0.0359  R2=0.9059
