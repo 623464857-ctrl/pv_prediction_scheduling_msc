@@ -84,7 +84,7 @@ def build_comparison_table(horizon: int, all_results: dict) -> pd.DataFrame:
     rows = []
     order = [
         "persistence", "moving_average", "ridge", "xgboost", "lightgbm",
-        "lstm_residual", "bilstm_residual", "cnn_lstm_residual", "cnn_bilstm_residual", "patchtst_residual",
+        "cnn_bilstm_residual",
     ]
     for key in order:
         if key not in all_results:

@@ -1,0 +1,19 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P07_h4_mse.log
+[INFO] ============================================================
+[INFO] Phase 1 改进损失函数训练
+[INFO] 损失函数: mse
+[INFO] 非对称系数 alpha: 0.50
+[INFO] 峰值权重: 2.0, 夜间权重: 3.0
+[INFO] 物理约束: 启用
+[INFO] ============================================================
+[WARNING] 未知损失函数类型 mse，使用标准MSE
+[INFO] lstm (mse) RMSE=0.0912 nRMSE=2.0662 | Peak RMSE=0.1201 | Low RMSE=0.0033 | 训练时间=21.4s
+[WARNING] 未知损失函数类型 mse，使用标准MSE
+[INFO] bilstm (mse) RMSE=0.0914 nRMSE=2.0714 | Peak RMSE=0.1191 | Low RMSE=0.0017 | 训练时间=206.7s
+[WARNING] 未知损失函数类型 mse，使用标准MSE
+[INFO] cnn_lstm (mse) RMSE=0.0958 nRMSE=2.1707 | Peak RMSE=0.1216 | Low RMSE=0.0051 | 训练时间=101.5s
+[WARNING] 未知损失函数类型 mse，使用标准MSE
+[INFO] cnn_bilstm (mse) RMSE=0.0928 nRMSE=2.1012 | Peak RMSE=0.1203 | Low RMSE=0.0048 | 训练时间=57.9s
+[WARNING] 未知损失函数类型 mse，使用标准MSE
+[INFO] patchtst (mse) RMSE=0.0945 nRMSE=2.1418 | Peak RMSE=0.1223 | Low RMSE=0.0053 | 训练时间=30.8s
+[INFO] 训练完成，结果已保存: data\prediction\step5_new_experiments\metrics\h4\improved_loss_mse_metrics.json

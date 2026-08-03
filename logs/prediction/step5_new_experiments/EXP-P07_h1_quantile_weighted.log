@@ -1,0 +1,19 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P07_h1_quantile_weighted.log
+[INFO] ============================================================
+[INFO] Phase 1 改进损失函数训练
+[INFO] 损失函数: quantile_weighted
+[INFO] 非对称系数 alpha: 0.50
+[INFO] 峰值权重: 2.0, 夜间权重: 3.0
+[INFO] 物理约束: 启用
+[INFO] ============================================================
+[INFO] 使用分段加权损失
+[INFO] lstm (quantile_weighted) RMSE=0.0617 nRMSE=1.3974 | Peak RMSE=0.0681 | Low RMSE=0.0005 | 训练时间=148.4s
+[INFO] 使用分段加权损失
+[INFO] bilstm (quantile_weighted) RMSE=0.0610 nRMSE=1.3811 | Peak RMSE=0.0686 | Low RMSE=0.0005 | 训练时间=48.5s
+[INFO] 使用分段加权损失
+[INFO] cnn_lstm (quantile_weighted) RMSE=0.0604 nRMSE=1.3674 | Peak RMSE=0.0673 | Low RMSE=0.0012 | 训练时间=111.6s
+[INFO] 使用分段加权损失
+[INFO] cnn_bilstm (quantile_weighted) RMSE=0.0615 nRMSE=1.3922 | Peak RMSE=0.0710 | Low RMSE=0.0007 | 训练时间=195.1s
+[INFO] 使用分段加权损失
+[INFO] patchtst (quantile_weighted) RMSE=0.0625 nRMSE=1.4150 | Peak RMSE=0.0748 | Low RMSE=0.0024 | 训练时间=55.4s
+[INFO] 训练完成，结果已保存: data\prediction\step5_new_experiments\metrics\h1\improved_loss_quantile_weighted_metrics.json

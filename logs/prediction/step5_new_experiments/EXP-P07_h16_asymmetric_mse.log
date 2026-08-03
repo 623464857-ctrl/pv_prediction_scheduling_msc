@@ -1,0 +1,19 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P07_h16_asymmetric_mse.log
+[INFO] ============================================================
+[INFO] Phase 1 改进损失函数训练
+[INFO] 损失函数: asymmetric_mse
+[INFO] 非对称系数 alpha: 0.40
+[INFO] 峰值权重: 2.0, 夜间权重: 3.0
+[INFO] 物理约束: 禁用
+[INFO] ============================================================
+[INFO] 使用非对称MSE损失，alpha=0.4
+[INFO] lstm (asymmetric_mse) RMSE=0.0870 nRMSE=1.9751 | Peak RMSE=0.1337 | Low RMSE=0.0180 | 训练时间=75.8s
+[INFO] 使用非对称MSE损失，alpha=0.4
+[INFO] bilstm (asymmetric_mse) RMSE=0.0861 nRMSE=1.9534 | Peak RMSE=0.1182 | Low RMSE=0.0204 | 训练时间=125.0s
+[INFO] 使用非对称MSE损失，alpha=0.4
+[INFO] cnn_lstm (asymmetric_mse) RMSE=0.0873 nRMSE=1.9810 | Peak RMSE=0.1394 | Low RMSE=0.0169 | 训练时间=116.0s
+[INFO] 使用非对称MSE损失，alpha=0.4
+[INFO] cnn_bilstm (asymmetric_mse) RMSE=0.0906 nRMSE=2.0556 | Peak RMSE=0.1540 | Low RMSE=0.0251 | 训练时间=103.5s
+[INFO] 使用非对称MSE损失，alpha=0.4
+[INFO] patchtst (asymmetric_mse) RMSE=0.0838 nRMSE=1.9020 | Peak RMSE=0.1223 | Low RMSE=0.0207 | 训练时间=124.9s
+[INFO] 训练完成，结果已保存: data\prediction\step5_new_experiments\metrics\h16\improved_loss_asymmetric_mse_metrics.json

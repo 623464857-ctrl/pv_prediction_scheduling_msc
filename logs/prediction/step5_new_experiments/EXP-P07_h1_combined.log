@@ -1,0 +1,19 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P07_h1_combined.log
+[INFO] ============================================================
+[INFO] Phase 1 改进损失函数训练
+[INFO] 损失函数: combined
+[INFO] 非对称系数 alpha: 0.50
+[INFO] 峰值权重: 2.0, 夜间权重: 3.0
+[INFO] 物理约束: 启用
+[INFO] ============================================================
+[INFO] 使用组合损失
+[INFO] lstm (combined) RMSE=0.0612 nRMSE=1.3862 | Peak RMSE=0.0691 | Low RMSE=0.0001 | 训练时间=142.9s
+[INFO] 使用组合损失
+[INFO] bilstm (combined) RMSE=0.0605 nRMSE=1.3700 | Peak RMSE=0.0691 | Low RMSE=0.0003 | 训练时间=36.0s
+[INFO] 使用组合损失
+[INFO] cnn_lstm (combined) RMSE=0.0607 nRMSE=1.3755 | Peak RMSE=0.0684 | Low RMSE=0.0002 | 训练时间=138.6s
+[INFO] 使用组合损失
+[INFO] cnn_bilstm (combined) RMSE=0.0607 nRMSE=1.3748 | Peak RMSE=0.0686 | Low RMSE=0.0001 | 训练时间=249.3s
+[INFO] 使用组合损失
+[INFO] patchtst (combined) RMSE=0.0621 nRMSE=1.4060 | Peak RMSE=0.0738 | Low RMSE=0.0011 | 训练时间=87.7s
+[INFO] 训练完成，结果已保存: data\prediction\step5_new_experiments\metrics\h1\improved_loss_combined_metrics.json

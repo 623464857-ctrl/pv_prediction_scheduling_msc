@@ -321,7 +321,7 @@ def main():
     parser.add_argument("--horizon", type=int, choices=[1, 4, 16], required=True)
     parser.add_argument("--model", type=str, choices=RESIDUAL_MODELS, default=None,
                         help="指定模型（默认全部 5 个）")
-    parser.add_argument("--strategy", type=str, choices=["S1", "S2", "S3", "S4", "S5", "S6"], default=None,
+    parser.add_argument("--strategy", type=str, choices=["S2", "S3", "S4", "S5", "S6"], default=None,
                         help="强制使用特定策略的参数（默认自动选择最优）")
     args = parser.parse_args()
 

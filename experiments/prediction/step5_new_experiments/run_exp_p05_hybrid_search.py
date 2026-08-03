@@ -24,7 +24,7 @@ from experiments.prediction.step5_new_experiments.exp_p05_common import (
 )
 from experiments.prediction.step5_new_experiments.exp_p05_hybrid_search import run_hybrid_ablation
 
-STRATEGIES = ["S1", "S2", "S3", "S4", "S5", "S6"]
+STRATEGIES = ["S2", "S3", "S4", "S5", "S6"]
 
 
 def main():

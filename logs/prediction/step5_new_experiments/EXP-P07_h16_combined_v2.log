@@ -1,0 +1,10 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P07_h16_combined_v2.log
+[INFO] ============================================================
+[INFO] Phase 1 & Phase 2 改进损失函数训练
+[INFO] 损失函数: combined_v2
+[INFO] Huber delta: 0.30, 平滑权重: 0.010, 日落权重: 0.050, 夜间权重: 0.0
+[INFO] 物理约束: 禁用
+[INFO] ============================================================
+[INFO] 使用Phase 2组合损失（无peak_weight，含日落约束）
+[INFO] cnn_bilstm (combined_v2) RMSE=0.0820 nRMSE=1.8606 | Peak RMSE=0.0871 | Low RMSE=0.0168 | 训练时间=137.2s
+[INFO] 训练完成，结果已保存: data\prediction\step5_new_experiments\metrics\h16\improved_loss_combined_v2_metrics.json

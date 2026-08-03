@@ -43,7 +43,7 @@ MODEL_DISPLAY_NAMES = {
     "proposed": "Proposed",
 }
 
-RESIDUAL_MODELS = ["lstm", "bilstm", "cnn_lstm", "cnn_bilstm", "patchtst"]
+RESIDUAL_MODELS = ["cnn_bilstm"]
 
 
 def load_config(name: str = "exp_p05_base.json") -> dict:

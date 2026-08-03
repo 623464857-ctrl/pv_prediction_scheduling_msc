@@ -223,8 +223,8 @@ def run_hybrid_ablation(
     cfg: dict,
 ) -> dict[str, Any]:
     """
-    strategy: S1..S6
-    S1 Random, S2 Optuna, S3 AFSA, S4 Optuna-init AFSA, S5 AFSA-refined Optuna, S6 Hybrid multi-objective
+    strategy: S2..S6
+    S2 Optuna, S3 AFSA, S4 Optuna→AFSA, S5 AFSA→Optuna, S6 Optuna+AFSA 混合
     """
     hs = cfg["hybrid_search"]
     n_trials = hs["n_trials"]
@@ -234,9 +234,7 @@ def run_hybrid_ablation(
     space = DEFAULT_SEARCH_SPACE
     weights = hs["score_weights"]
 
-    if strategy == "S1":
-        rows = run_random_search(n_trials, model_name, data, meta, horizon, space, max_epochs, patience, seed)
-    elif strategy == "S2":
+    if strategy == "S2":
         rows = run_optuna_search(n_trials, model_name, data, meta, horizon, space, max_epochs, patience, seed)
     elif strategy == "S3":
         rows = run_afsa_search(n_trials, model_name, data, meta, horizon, space, max_epochs, patience, seed)
@@ -250,11 +248,11 @@ def run_hybrid_ablation(
         optuna_rows = run_optuna_search(n_trials, model_name, data, meta, horizon, space, max_epochs, patience, seed)
         rows = afsa_rows + optuna_rows
     elif strategy == "S6":
-        rand_rows = run_random_search(max(2, n_trials // 3), model_name, data, meta, horizon, space, max_epochs, patience, seed)
-        optuna_rows = run_optuna_search(max(3, n_trials // 3), model_name, data, meta, horizon, space, max_epochs, patience, seed)
+        # Optuna + AFSA 混合 (移除 Random Search)
+        optuna_rows = run_optuna_search(max(4, n_trials // 2), model_name, data, meta, horizon, space, max_epochs, patience, seed)
         init = optuna_rows[0]["train_params"] if optuna_rows else None
-        afsa_rows = run_afsa_search(max(3, n_trials // 3), model_name, data, meta, horizon, space, max_epochs, patience, seed, init_params=init)
-        rows = rand_rows + optuna_rows + afsa_rows
+        afsa_rows = run_afsa_search(max(4, n_trials // 2), model_name, data, meta, horizon, space, max_epochs, patience, seed, init_params=init)
+        rows = optuna_rows + afsa_rows
     else:
         raise ValueError(f"未知策略: {strategy}")
 
