@@ -10,7 +10,7 @@
     "test_frac": 0.15,
     "capacity_pu": 1.0,
     "daytime_threshold": 0.01,
-    "residual_models": ["lstm", "bilstm", "cnn_lstm", "cnn_bilstm", "patchtst"],
+    "residual_models": ["cnn_bilstm"],
     "residual_train": {
         "max_epochs": 50,
         "patience": 8,

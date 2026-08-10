@@ -36,11 +36,7 @@ from experiments.prediction.step5_new_experiments.exp_p05_common import (
 
 
 DEFAULT_MODEL_KWARGS = {
-    "lstm": {"hidden": 64, "layers": 2, "dropout": 0.2},
-    "bilstm": {"hidden": 64, "layers": 2, "dropout": 0.2},
-    "cnn_lstm": {"conv_channels": 32, "lstm_hidden": 64, "lstm_layers": 2, "dropout": 0.2},
-    "cnn_bilstm": {"conv_channels": 32, "bilstm_hidden": 64, "bilstm_layers": 2, "dropout": 0.2},
-    "patchtst": {"patch_len": 4, "stride": 2, "d_model": 64, "n_heads": 4, "num_layers": 2, "dropout": 0.2},
+    "cnn_bilstm": {"bilstm_hidden": 64, "bilstm_layers": 2, "dropout": 0.2},
 }
 
 
@@ -60,7 +56,7 @@ def evaluate_predictions(horizon: int, cfg: dict, logger) -> dict:
 
     keys = [
         "persistence", "moving_average", "ridge", "xgboost", "lightgbm",
-        "lstm_residual", "bilstm_residual", "cnn_lstm_residual", "cnn_bilstm_residual", "patchtst_residual",
+        "cnn_bilstm_residual",
     ]
     segmented = {}
     for key in keys:

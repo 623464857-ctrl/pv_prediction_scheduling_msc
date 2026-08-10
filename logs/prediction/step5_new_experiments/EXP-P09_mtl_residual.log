@@ -1,0 +1,53 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P09_mtl_residual.log
+[INFO] ============================================================
+[INFO] EXP-P09 MTL with Residual Scaler Training
+[INFO] ============================================================
+[INFO] Fitting residual scaler...
+[INFO]   H1: residuals mean=0.0000, std=0.0441
+[INFO]   H4: residuals mean=0.0000, std=0.1157
+[INFO]   H16: residuals mean=0.0000, std=0.3280
+[INFO] Combined scaler: mean=0.0000, scale=0.2024
+[INFO] Epoch 1: train=0.003200, val=0.003926 | H1=0.000790, H4=0.002539, H16=0.020359
+[INFO] Epoch 2: train=0.002260, val=0.003651 | H1=0.000784, H4=0.002565, H16=0.020009
+[INFO] Epoch 3: train=0.002124, val=0.003882 | H1=0.000779, H4=0.002933, H16=0.021817
+[INFO] Epoch 4: train=0.002075, val=0.003623 | H1=0.000768, H4=0.002760, H16=0.020655
+[INFO] Epoch 5: train=0.002027, val=0.003875 | H1=0.000766, H4=0.002702, H16=0.020496
+[INFO] Epoch 6: train=0.002012, val=0.003698 | H1=0.000749, H4=0.002658, H16=0.020124
+[INFO] Epoch 7: train=0.001972, val=0.003664 | H1=0.000751, H4=0.002722, H16=0.020683
+[INFO] Epoch 8: train=0.001984, val=0.003718 | H1=0.000748, H4=0.002601, H16=0.021170
+[INFO] Epoch 9: train=0.001953, val=0.003693 | H1=0.000751, H4=0.002755, H16=0.020730
+[INFO] Epoch 10: train=0.001904, val=0.003796 | H1=0.000746, H4=0.002923, H16=0.021702
+[INFO] Epoch 11: train=0.001882, val=0.003652 | H1=0.000740, H4=0.002658, H16=0.020636
+[INFO] Epoch 12: train=0.001908, val=0.003609 | H1=0.000738, H4=0.002740, H16=0.020238
+[INFO] Epoch 13: train=0.001835, val=0.003606 | H1=0.000736, H4=0.002544, H16=0.019965
+[INFO] Epoch 14: train=0.001834, val=0.003518 | H1=0.000739, H4=0.002637, H16=0.020208
+[INFO] Epoch 15: train=0.001854, val=0.003685 | H1=0.000734, H4=0.002723, H16=0.020153
+[INFO] Epoch 16: train=0.001839, val=0.003544 | H1=0.000731, H4=0.002751, H16=0.020233
+[INFO] Epoch 17: train=0.001823, val=0.003699 | H1=0.000731, H4=0.002789, H16=0.019903
+[INFO] Epoch 18: train=0.001818, val=0.003750 | H1=0.000735, H4=0.002872, H16=0.020973
+[INFO] Epoch 19: train=0.001847, val=0.003558 | H1=0.000736, H4=0.002756, H16=0.019025
+[INFO] Epoch 20: train=0.001770, val=0.003616 | H1=0.000735, H4=0.002846, H16=0.020062
+[INFO] Epoch 21: train=0.001794, val=0.003615 | H1=0.000734, H4=0.002894, H16=0.019540
+[INFO] Epoch 22: train=0.001762, val=0.003500 | H1=0.000731, H4=0.002810, H16=0.019706
+[INFO] Epoch 23: train=0.001756, val=0.003631 | H1=0.000737, H4=0.002806, H16=0.019742
+[INFO] Epoch 24: train=0.001779, val=0.003631 | H1=0.000737, H4=0.002918, H16=0.020119
+[INFO] Epoch 25: train=0.001743, val=0.003575 | H1=0.000743, H4=0.002916, H16=0.020367
+[INFO] Epoch 26: train=0.001718, val=0.003613 | H1=0.000734, H4=0.002794, H16=0.019759
+[INFO] Epoch 27: train=0.001731, val=0.003514 | H1=0.000742, H4=0.002837, H16=0.019399
+[INFO] Epoch 28: train=0.001700, val=0.003485 | H1=0.000734, H4=0.002759, H16=0.020489
+[INFO] Epoch 29: train=0.001698, val=0.003750 | H1=0.000741, H4=0.003022, H16=0.020833
+[INFO] Epoch 30: train=0.001681, val=0.003753 | H1=0.000736, H4=0.003059, H16=0.020697
+[INFO] Epoch 31: train=0.001665, val=0.003694 | H1=0.000751, H4=0.002903, H16=0.019717
+[INFO] Epoch 32: train=0.001626, val=0.003579 | H1=0.000745, H4=0.002787, H16=0.020174
+[INFO] Epoch 33: train=0.001674, val=0.003501 | H1=0.000742, H4=0.002931, H16=0.019313
+[INFO] Epoch 34: train=0.001610, val=0.003709 | H1=0.000754, H4=0.002935, H16=0.019793
+[INFO] Epoch 35: train=0.001627, val=0.003631 | H1=0.000761, H4=0.002955, H16=0.020543
+[INFO] Epoch 36: train=0.001623, val=0.003942 | H1=0.000759, H4=0.003127, H16=0.020521
+[INFO] Early stopping at epoch 36
+[INFO] Horizon 1: RMSE=0.0297, MAE=0.0106, R2=0.9883
+[INFO] Horizon 4: RMSE=0.0586, MAE=0.0239, R2=0.9544
+[INFO] Horizon 16: RMSE=0.1026, MAE=0.0428, R2=0.8599
+[INFO] ============================================================
+[INFO] Training completed in 229.5s
+[INFO] Results saved to: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc\data\prediction\step6_multitask_learning\models_residual\mtl_residual
+[INFO] ============================================================

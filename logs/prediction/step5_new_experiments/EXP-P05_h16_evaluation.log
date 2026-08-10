@@ -4,15 +4,6 @@
 [INFO] ridge daytime RMSE=0.1422
 [INFO] xgboost daytime RMSE=0.1195
 [INFO] lightgbm daytime RMSE=0.1214
-[INFO] lstm_residual daytime RMSE=0.1159
-[INFO] bilstm_residual daytime RMSE=0.1183
-[INFO] cnn_lstm_residual daytime RMSE=0.1166
 [INFO] cnn_bilstm_residual daytime RMSE=0.1215
-[INFO] patchtst_residual daytime RMSE=0.1158
-[INFO] lstm_residual inference 0.003 ms/sample
-[INFO] bilstm_residual inference 0.009 ms/sample
-[INFO] cnn_lstm_residual inference 0.004 ms/sample
-[INFO] cnn_bilstm_residual inference 0.010 ms/sample
-[INFO] patchtst_residual inference 0.009 ms/sample
+[INFO] cnn_bilstm_residual inference 0.017 ms/sample
 [INFO] 评价完成
-[INFO] Step6 Optuna-AFSA 混合搜索

@@ -1,0 +1,6 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P05_h1_random_search.log
+[INFO] 开始随机搜索: horizon=1, trials=4
+[INFO] 搜索完成，耗时 1149.2s
+[INFO] 最优参数: {'batch_size': 128, 'lr': 0.002, 'hidden': 32, 'layers': 1, 'dropout': 0.1}
+[INFO] 最优 RMSE: 0.9428
+[INFO] 使用最优参数重新训练...

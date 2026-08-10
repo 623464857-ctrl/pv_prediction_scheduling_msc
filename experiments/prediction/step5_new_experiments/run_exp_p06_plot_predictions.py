@@ -49,31 +49,19 @@ HORIZON_LABELS = {
 DISPLAY_MODELS = [
     "xgboost",
     "lightgbm",
-    "lstm_residual_optuna",
-    "bilstm_residual_optuna",
-    "cnn_lstm_residual_optuna",
     "cnn_bilstm_residual_optuna",
-    "patchtst_residual_optuna",
 ]
 
 # 每个模型的显示名称
 MODEL_DISPLAY_NAMES.update({
-    "lstm_residual_optuna": "LSTM (Residual+Opt)",
-    "bilstm_residual_optuna": "BiLSTM (Residual+Opt)",
-    "cnn_lstm_residual_optuna": "CNN-LSTM (Residual+Opt)",
     "cnn_bilstm_residual_optuna": "CNN-BiLSTM (Residual+Opt)",
-    "patchtst_residual_optuna": "PatchTST (Residual+Opt)",
 })
 
 # 模型颜色配置
 MODEL_COLORS = {
     "xgboost": "#d62728",              # 红色
     "lightgbm": "#9467bd",             # 紫色
-    "lstm_residual_optuna": "#1f77b4",  # 蓝色
-    "bilstm_residual_optuna": "#ff7f0e", # 橙色
-    "cnn_lstm_residual_optuna": "#2ca02c", # 绿色
     "cnn_bilstm_residual_optuna": "#bcbd22", # 黄绿色
-    "patchtst_residual_optuna": "#e377c2",  # 粉色
     "ridge": "#2ca02c",
 }
 

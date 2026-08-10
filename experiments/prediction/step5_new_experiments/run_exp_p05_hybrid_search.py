@@ -22,7 +22,10 @@ from experiments.prediction.step5_new_experiments.exp_p05_common import (
     load_samples,
     setup_logger,
 )
-from experiments.prediction.step5_new_experiments.exp_p05_hybrid_search import run_hybrid_ablation
+from experiments.prediction.step5_new_experiments.exp_p05_hybrid_search import (
+    run_hybrid_ablation,
+    retrain_with_best_params,
+)
 
 STRATEGIES = ["S2", "S3", "S4", "S5", "S6"]
 
@@ -30,8 +33,9 @@ STRATEGIES = ["S2", "S3", "S4", "S5", "S6"]
 def main():
     parser = argparse.ArgumentParser(description="EXP-P05 Optuna-AFSA 混合搜索")
     parser.add_argument("--horizon", type=int, choices=[1, 4, 16], required=True)
-    parser.add_argument("--strategy", type=str, choices=STRATEGIES, default="S2")
+    parser.add_argument("--strategy", type=str, choices=STRATEGIES, default="S6")
     parser.add_argument("--all", action="store_true", help="运行 S1-S6 全部消融")
+    parser.add_argument("--no-retrain", action="store_true", help="跳过重新训练步骤（仅搜索参数）")
     args = parser.parse_args()
 
     cfg = load_config()
@@ -44,12 +48,41 @@ def main():
 
     strategies = STRATEGIES if args.all else [args.strategy]
     all_results = {}
+
     for s in strategies:
         logger.info("运行策略 %s ...", s)
         result = run_hybrid_ablation(s, model_name, samples, meta, args.horizon, cfg)
+
+        # 使用最优参数重新训练并保存模型
+        retrain_info = {}
+        if not args.no_retrain:
+            logger.info("使用最优参数重新训练模型...")
+            retrain_info = retrain_with_best_params(
+                result["best"],
+                model_name,
+                samples,
+                meta,
+                args.horizon,
+                cfg,
+            )
+            logger.info(
+                "重新训练完成: RMSE=%.4f, MAE=%.4f",
+                retrain_info["metrics"]["RMSE"],
+                retrain_info["metrics"]["MAE"],
+            )
+
         # 去掉不可序列化的 model_state
         best = {k: v for k, v in result["best"].items() if k != "model_state"}
-        all_results[s] = {"strategy": s, "trials": result["trials"], "best": best}
+        all_results[s] = {
+            "strategy": s,
+            "trials": result["trials"],
+            "best": best,
+            "retrain": {
+                "metrics": retrain_info.get("metrics", {}),
+                "model_path": retrain_info.get("model_path", ""),
+                "train_params": retrain_info.get("train_params", {}),
+            },
+        }
 
     out = METRICS_DIR / f"h{args.horizon}" / "hybrid_search_ablation.json"
     out.write_text(json.dumps(all_results, indent=2, ensure_ascii=False), encoding="utf-8")

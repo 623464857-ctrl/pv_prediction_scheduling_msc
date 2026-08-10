@@ -31,7 +31,7 @@
         "n_jobs": -1,
         "verbose": -1
     },
-    "residual_models": ["lstm", "bilstm", "cnn_lstm", "cnn_bilstm", "patchtst"],
+    "residual_models": ["cnn_bilstm"],
     "residual_train": {
         "max_epochs": 50,
         "patience": 8,

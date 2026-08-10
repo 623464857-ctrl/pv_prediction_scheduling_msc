@@ -1,0 +1,5 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P08_h16_physics.log
+[INFO] ============================================================
+[INFO] EXP-P08 物理约束特征实验 horizon=16
+[INFO] 物理特征: ['temp_correction_factor', 'power_physics_bound_pu', 'clearness_index', 'clearness_category', 'irradiance_ramp_60m']
+[INFO] 总样本: 70129  X=(70129, 16, 32)  y=(70129, 16)  n_features=32

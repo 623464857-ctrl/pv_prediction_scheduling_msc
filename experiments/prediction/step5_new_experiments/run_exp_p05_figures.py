@@ -47,8 +47,7 @@ HORIZON_LABELS = {1: "15min", 4: "1h", 16: "4h"}
 
 ALL_KEYS = [
     "persistence", "moving_average", "ridge", "xgboost", "lightgbm",
-    "lstm_residual", "bilstm_residual", "cnn_lstm_residual",
-    "cnn_bilstm_residual", "patchtst_residual",
+    "cnn_bilstm_residual",
 ]
 
 MODEL_COLORS = {
@@ -57,11 +56,7 @@ MODEL_COLORS = {
     "ridge": "#2ca02c",
     "xgboost": "#d62728",
     "lightgbm": "#9467bd",
-    "lstm_residual": "#8c564b",
-    "bilstm_residual": "#e377c2",
-    "cnn_lstm_residual": "#7f7f7f",
     "cnn_bilstm_residual": "#bcbd22",
-    "patchtst_residual": "#17becf",
 }
 
 
@@ -396,7 +391,7 @@ def plot_cross_horizon_residual(logger: logging.Logger) -> Path | None:
         return None
 
     model_keys = sorted(all_residual.keys())
-    model_names = [MODEL_DISPLAY_NAMES.get(k.replace("_residual", ""), k) for k in model_keys]
+    model_names = [MODEL_DISPLAY_NAMES.get(k, k) for k in model_keys]
     n_models = len(model_keys)
 
     # 每个模型 3 根柱紧挨着，无 gap
@@ -442,8 +437,7 @@ def plot_cross_horizon_benchmark(logger: logging.Logger) -> Path | None:
     horizons = [1, 4, 16]
     hlabels = ["15min (h1)", "1h (h4)", "4h (h16)"]
     horizon_colors = ["#4c78a8", "#f58518", "#54a24b"]  # h1=蓝 h4=橙 h16=绿
-    model_keys = ["lstm_residual", "bilstm_residual", "cnn_lstm_residual",
-                  "cnn_bilstm_residual", "patchtst_residual"]
+    model_keys = ["cnn_bilstm_residual"]
 
     # 收集数据: model_key -> {h -> {metric -> val}}
     all_data = {}

@@ -1,0 +1,14 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P09_search_all.log
+[INFO] EXP-P09 多任务学习光伏功率预测实验
+[INFO] 阶段: search
+[INFO] 设备: cpu
+[INFO] ============================================================
+[INFO] 阶段1: 混合搜索 (Optuna + AFSA)
+[INFO] ============================================================
+[INFO] 使用搜索策略: S6
+[INFO] 搜索完成!
+[INFO] 最优参数: {'conv_channels': 32, 'kernel_size_0': 3, 'kernel_size_1': 3, 'bilstm_hidden': 128, 'bilstm_layers': 1, 'dropout': 0.1, 'task_head_hidden': 32, 'batch_size': 128, 'lr': 0.002}
+[INFO] 最优RMSE: H1=0.1401, H4=0.2801, H16=0.7663
+[INFO] ============================================================
+[INFO] EXP-P09 实验完成!
+[INFO] ============================================================

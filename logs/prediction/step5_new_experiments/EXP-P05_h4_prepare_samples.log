@@ -15,5 +15,4 @@
 [INFO] 保存 y_last_val.npy shape=(10522, 1)
 [INFO] 保存 y_last_test.npy shape=(10522, 1)
 [INFO] 保存 daylight_flag_test.npy shape=(10522, 1)
-[INFO] 完成，耗时 1.2s
-[INFO] Step1 强基线
+[INFO] 完成，耗时 1.1s

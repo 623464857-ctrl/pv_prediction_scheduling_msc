@@ -1,4 +1,5 @@
 [INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P05_h1_pipeline.log
 [INFO] ============================================================
 [INFO] EXP-P05 实验流程 horizon=1
+[INFO] 将执行步骤: prepare -> baselines -> residual
 [INFO] Step2 特征增强 + 样本构造

@@ -30,16 +30,8 @@ MODEL_DISPLAY_NAMES = {
     "ridge": "Ridge Regression",
     "xgboost": "XGBoost",
     "lightgbm": "LightGBM",
-    "lstm": "LSTM",
-    "bilstm": "BiLSTM",
-    "cnn_lstm": "CNN-LSTM",
     "cnn_bilstm": "CNN-BiLSTM",
-    "patchtst": "PatchTST",
-    "lstm_residual": "LSTM (Residual)",
-    "bilstm_residual": "BiLSTM (Residual)",
-    "cnn_lstm_residual": "CNN-LSTM (Residual)",
     "cnn_bilstm_residual": "CNN-BiLSTM (Residual)",
-    "patchtst_residual": "PatchTST (Residual)",
     "proposed": "Proposed",
 }
 

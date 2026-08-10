@@ -293,26 +293,11 @@ def _normalize_params(params: dict, model_name: str) -> dict:
     hidden = out.pop("hidden", None)
     layers = out.pop("layers", None)
 
-    if name in ("lstm", "bilstm"):
-        if hidden is not None:
-            out["hidden"] = hidden
-        if layers is not None:
-            out["layers"] = layers
-    elif name == "cnn_lstm":
-        if hidden is not None:
-            out["lstm_hidden"] = hidden
-        if layers is not None:
-            out["lstm_layers"] = layers
-    elif name == "cnn_bilstm":
+    if name == "cnn_bilstm":
         if hidden is not None:
             out["bilstm_hidden"] = hidden
         if layers is not None:
             out["bilstm_layers"] = layers
-    elif name in ("minipatchtst", "patchtst"):
-        if hidden is not None:
-            out["d_model"] = hidden
-        if layers is not None:
-            out["num_layers"] = layers
     return out
 
 

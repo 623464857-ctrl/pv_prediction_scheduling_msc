@@ -3,5 +3,5 @@
 [INFO] EXP-P08 物理约束特征实验 horizon=1
 [INFO] 物理特征: ['temp_correction_factor', 'power_physics_bound_pu', 'clearness_index', 'clearness_category', 'irradiance_ramp_60m']
 [INFO] 总样本: 70144  X=(70144, 16, 32)  y=(70144, 1)  n_features=32
-[INFO] bilstm (physics) RMSE=0.0302 nRMSE=0.1095 R2=0.9879 | Peak_R2=0.845 Low_RMSE=0.0013 | time=326.3s
+[INFO] cnn_bilstm (physics) RMSE=0.0311 nRMSE=0.1130 R2=0.9871 | Peak_R2=0.818 Low_RMSE=0.0016 | time=895.1s
 [INFO] 物理特征实验完成，结果已保存: data\prediction\step5_new_experiments\metrics\h1\physics_features_metrics.json

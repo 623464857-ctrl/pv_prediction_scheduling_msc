@@ -1,57 +1,13 @@
 {
-  "lstm_residual": {
-    "batch_size": 512,
-    "warmup_iters": 10,
-    "repeat_iters": 100,
-    "mean_forward_sec": 0.0019193410001753363,
-    "std_forward_sec": 0.0001586349538245856,
-    "total_inference_sec": 0.19193410001753364,
-    "ms_per_sample": 0.003748712890967454,
-    "samples_per_sec": 266758.2258458646,
-    "params": 57153
-  },
-  "bilstm_residual": {
-    "batch_size": 512,
-    "warmup_iters": 10,
-    "repeat_iters": 100,
-    "mean_forward_sec": 0.005496534000267275,
-    "std_forward_sec": 0.0005880281879412355,
-    "total_inference_sec": 0.5496534000267275,
-    "ms_per_sample": 0.01073541796927202,
-    "samples_per_sec": 93149.61027714983,
-    "params": 147073
-  },
-  "cnn_lstm_residual": {
-    "batch_size": 512,
-    "warmup_iters": 10,
-    "repeat_iters": 100,
-    "mean_forward_sec": 0.002461460999766132,
-    "std_forward_sec": 0.0002018064657621897,
-    "total_inference_sec": 0.2461460999766132,
-    "ms_per_sample": 0.004807541015168226,
-    "samples_per_sec": 208006.5457257483,
-    "params": 61121
-  },
   "cnn_bilstm_residual": {
     "batch_size": 512,
     "warmup_iters": 10,
     "repeat_iters": 100,
-    "mean_forward_sec": 0.005794565000251169,
-    "std_forward_sec": 0.0004273765875282158,
-    "total_inference_sec": 0.5794565000251168,
-    "ms_per_sample": 0.011317509766115563,
-    "samples_per_sec": 88358.66022346924,
+    "mean_forward_sec": 0.009768019000002823,
+    "std_forward_sec": 0.002442241540643622,
+    "total_inference_sec": 0.9768019000002823,
+    "ms_per_sample": 0.019078162109380514,
+    "samples_per_sec": 52415.95046035967,
     "params": 152321
-  },
-  "patchtst_residual": {
-    "batch_size": 512,
-    "warmup_iters": 10,
-    "repeat_iters": 100,
-    "mean_forward_sec": 0.005008285999065265,
-    "std_forward_sec": 0.0008165287668817618,
-    "total_inference_sec": 0.5008285999065265,
-    "ms_per_sample": 0.009781808591924346,
-    "samples_per_sec": 102230.5834961419,
-    "params": 107713
   }
 }

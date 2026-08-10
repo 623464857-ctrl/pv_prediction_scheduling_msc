@@ -1,8 +1,3 @@
 [INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P05_h1_residual_train.log
-[INFO] lstm residual RMSE=0.0295 MAE=0.0103
-[INFO] bilstm residual RMSE=0.0297 MAE=0.0109
-[INFO] cnn_lstm residual RMSE=0.0302 MAE=0.0117
 [INFO] cnn_bilstm residual RMSE=0.0300 MAE=0.0118
-[INFO] patchtst residual RMSE=0.0305 MAE=0.0120
 [INFO] 残差训练完成，指标: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc\data\prediction\step5_new_experiments\metrics\h1\residual_metrics.json
-[INFO] Step4+5 分段评价 + 推理计时

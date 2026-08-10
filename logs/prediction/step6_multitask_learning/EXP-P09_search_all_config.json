@@ -1,0 +1,80 @@
+{
+  "seed": 42,
+  "batch_size": 256,
+  "max_epochs": 50,
+  "patience": 8,
+  "lr": 0.001,
+  "use_idwa": true,
+  "huber_delta": 0.1,
+  "smoothness_weight": 0.05,
+  "sunset_weight": 0.1,
+  "night_weight": 0.0,
+  "search": {
+    "enabled": true,
+    "n_trials": 6,
+    "max_epochs": 8,
+    "patience": 4,
+    "strategies": [
+      "S2",
+      "S3",
+      "S4",
+      "S5",
+      "S6"
+    ],
+    "default_strategy": "S6"
+  },
+  "search_space": {
+    "conv_channels": [
+      8,
+      16,
+      32
+    ],
+    "kernel_size_0": [
+      3,
+      5,
+      7
+    ],
+    "kernel_size_1": [
+      3,
+      5,
+      7
+    ],
+    "bilstm_hidden": [
+      64,
+      128
+    ],
+    "bilstm_layers": [
+      1,
+      2
+    ],
+    "dropout": [
+      0.1,
+      0.2,
+      0.3
+    ],
+    "task_head_hidden": [
+      32,
+      64,
+      128
+    ],
+    "lr": [
+      0.0005,
+      0.001,
+      0.002
+    ],
+    "batch_size": [
+      128,
+      256
+    ]
+  },
+  "model_defaults": {
+    "conv_channels": 16,
+    "kernel_size_0": 3,
+    "kernel_size_1": 5,
+    "bilstm_hidden": 128,
+    "bilstm_layers": 1,
+    "dropout": 0.2,
+    "task_head_hidden": 64,
+    "dynamic_ref": true
+  }
+}

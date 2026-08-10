@@ -46,7 +46,7 @@ from experiments.prediction.step5_new_experiments.exp_p05_residual import (
 from experiments.prediction.step5_new_experiments.exp_p06_hybrid_search import run_hybrid_ablation
 
 STRATEGIES = ["S1", "S2", "S3", "S4", "S5", "S6"]
-MODELS = ["lstm", "bilstm", "cnn_lstm", "cnn_bilstm", "patchtst"]
+MODELS = ["cnn_bilstm"]
 
 
 def load_config() -> dict:

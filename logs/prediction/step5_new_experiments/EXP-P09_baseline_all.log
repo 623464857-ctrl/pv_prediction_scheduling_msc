@@ -1,0 +1,16 @@
+[INFO] 日志文件: logs\prediction\step5_new_experiments\EXP-P09_baseline_all.log
+[INFO] EXP-P09 多任务学习光伏功率预测实验
+[INFO] 阶段: baseline
+[INFO] 设备: cpu
+[INFO] ============================================================
+[INFO] 阶段2: 训练Baseline单任务模型
+[INFO] ============================================================
+[INFO] === Training Baseline for Horizon 1 ===
+[INFO] Baseline H1: RMSE=0.0304, MAE=0.0120, R2=0.9877 (time=138.0s)
+[INFO] === Training Baseline for Horizon 4 ===
+[INFO] Baseline H4: RMSE=0.3947, MAE=0.2641, R2=-0.6969 (time=124.2s)
+[INFO] === Training Baseline for Horizon 16 ===
+[INFO] Baseline H16: RMSE=0.3937, MAE=0.2813, R2=-0.7066 (time=93.7s)
+[INFO] ============================================================
+[INFO] EXP-P09 实验完成!
+[INFO] ============================================================
