@@ -32,9 +32,60 @@ from experiments.prediction.step4_optuna_hybrid.exp_p04_torch_utils import (
     eval_loss,
     get_device,
     make_loader,
+    predict,
     run_epoch,
     train_with_early_stop,
 )
+
+
+def reconstruct_power(y_anchor: np.ndarray, y_residual_pred: np.ndarray) -> np.ndarray:
+    """从残差预测重构功率: y_hat = y_anchor + y_residual_pred"""
+    return (y_anchor + y_residual_pred).astype(np.float32)
+
+
+def compute_residual_metrics(y_true_power: np.ndarray, y_pred_residual: np.ndarray,
+                             y_anchor: np.ndarray, y_scaler=None) -> dict:
+    """计算残差预测的真实功率指标
+
+    Args:
+        y_true_power: 真实功率值 (未标准化)
+        y_pred_residual: 预测的残差 (标准化后)
+        y_anchor: 锚点功率值 (未标准化)
+        y_scaler: 可选的残差标准化器 (用于反标准化)
+    """
+    from experiments.prediction.step4_optuna_hybrid.exp_p04_common import compute_all_metrics
+    # 反标准化残差预测
+    if y_scaler is not None:
+        y_residual_raw = y_scaler.inverse_transform(y_pred_residual)
+    else:
+        y_residual_raw = y_pred_residual
+    # 重构预测功率
+    y_pred = reconstruct_power(y_anchor, y_residual_raw)
+    # 计算真实功率的指标
+    metrics = compute_all_metrics(y_true_power.ravel(), y_pred.ravel())
+    return metrics, y_pred
+
+
+def reconstruct_power(y_anchor: np.ndarray, y_residual_pred: np.ndarray) -> np.ndarray:
+    """从残差预测重构功率: y_hat = y_anchor + y_residual_pred"""
+    return (y_anchor + y_residual_pred).astype(np.float32)
+
+
+def compute_residual_metrics(y_true: np.ndarray, y_pred_residual: np.ndarray,
+                              y_anchor: np.ndarray) -> dict:
+    """计算残差预测的真实功率指标
+
+    Args:
+        y_true: 真实功率值 (未标准化)
+        y_pred_residual: 预测的残差 (可能是标准化后的)
+        y_anchor: 锚点功率值 (未标准化)
+    """
+    from experiments.prediction.step4_optuna_hybrid.exp_p04_common import compute_all_metrics
+    # 重构预测功率
+    y_pred = reconstruct_power(y_anchor, y_pred_residual)
+    # 计算真实功率的指标
+    metrics = compute_all_metrics(y_true.ravel(), y_pred.ravel())
+    return metrics, y_pred
 
 
 def _objective(model_name, search_space, trial: optuna.Trial,
@@ -136,9 +187,12 @@ def run_optuna_for_model(model_name, horizon_cfg, base_cfg, logger):
     logger.info("开始 Optuna 调参: model=%s  horizon=%s", model_name, horizon)
 
     X_train = np.load(hdir / "X_train_seq.npy")
-    y_train = np.load(hdir / "y_train.npy")
+    y_residual_train = np.load(hdir / "y_train.npy")
     X_val = np.load(hdir / "X_val_seq.npy")
-    y_val = np.load(hdir / "y_val.npy")
+    y_residual_val = np.load(hdir / "y_val.npy")
+    # 锚点值 (用于残差重构: y_hat = y_anchor + y_residual_pred)
+    y_anchor_train = np.load(hdir / "y_anchor_train.npy")
+    y_anchor_val = np.load(hdir / "y_anchor_val.npy")
     _, _, n_features = X_train.shape
     meta = json.loads((hdir / "meta.json").read_text(encoding="utf-8"))
     seq_len = meta["lookback"]
@@ -156,14 +210,14 @@ def run_optuna_for_model(model_name, horizon_cfg, base_cfg, logger):
     n_total = len(X_train)
     tr_end = int(n_total * 2 / 3)
     X_quick = X_train[tr_end:]
-    y_quick = y_train[tr_end:]
+    y_quick_residual = y_residual_train[tr_end:]
     logger.info("Trial 快速搜索: fold split at %d  quick_train=%d", tr_end, len(X_quick))
 
     study = optuna.create_study(direction="minimize", sampler=optuna.samplers.TPESampler(seed=42))
     study.optimize(
         lambda trial: objective_with_fixed_fold(
             model_name, search_space, trial,
-            X_quick, y_quick, X_val, y_val,
+            X_quick, y_quick_residual, X_val, y_residual_val,
             seq_len, n_features, horizon, n_epochs, patience, device,
         ),
         n_trials=n_trials,
@@ -173,6 +227,8 @@ def run_optuna_for_model(model_name, horizon_cfg, base_cfg, logger):
     logger.info("快速搜索完成: best_quick_val_loss=%.6f  trials=%d", study.best_value, len(study.trials))
 
     # Step 2: 用最优参数在完整 3-fold 上评估
+    from experiments.prediction.step4_optuna_hybrid.exp_p04_common import load_y_scaler_from_json
+    y_scaler = load_y_scaler_from_json(f"h{horizon}")
     # Optuna best_params 返回字符串（categorical），需转回正确类型
     def _convert_params(params: dict, search_space: dict) -> dict:
         out = {}
@@ -212,9 +268,9 @@ def run_optuna_for_model(model_name, horizon_cfg, base_cfg, logger):
             model_name, n_features=n_features, seq_len=seq_len,
             horizon=horizon, **best_params_clean
         ).to(device)
-        train_loader = make_loader(X_train[tr_idx], y_train[tr_idx],
+        train_loader = make_loader(X_train[tr_idx], y_residual_train[tr_idx],
                                    batch_size=batch_size, shuffle=True)
-        val_loader = make_loader(X_train[va_idx], y_train[va_idx],
+        val_loader = make_loader(X_train[va_idx], y_residual_train[va_idx],
                                  batch_size=batch_size, shuffle=False)
         _, history = train_with_early_stop(
             model, train_loader, val_loader,
@@ -227,16 +283,45 @@ def run_optuna_for_model(model_name, horizon_cfg, base_cfg, logger):
     avg_val_loss = float(np.mean(fold_losses))
     logger.info("3-fold 平均 val_loss=%.6f", avg_val_loss)
 
+    # 用最优 fold 参数在完整验证集上评估真实功率指标
+    best_fold_idx = int(np.argmin(fold_losses))
+    _, best_va_idx = folds[best_fold_idx]
+    torch.manual_seed(42)
+    np.random.seed(42)
+    model_final = build_model(
+        model_name, n_features=n_features, seq_len=seq_len,
+        horizon=horizon, **best_params_clean
+    ).to(device)
+    train_loader = make_loader(X_train[best_va_idx[0]:], y_residual_train[best_va_idx[0]:],
+                               batch_size=batch_size, shuffle=True)
+    val_loader = make_loader(X_train[best_va_idx], y_residual_train[best_va_idx],
+                             batch_size=batch_size, shuffle=False)
+    _, history = train_with_early_stop(
+        model_final, train_loader, val_loader,
+        lr=lr, max_epochs=n_epochs, patience=patience, device=device,
+    )
+    y_pred_residual_scaled = predict(model_final, X_val, device)
+    y_pred_residual = y_scaler.inverse_transform(y_pred_residual_scaled)
+    y_true_power = y_anchor_val + y_residual_val
+    y_pred_power = y_anchor_val + y_pred_residual
+    from experiments.prediction.step4_optuna_hybrid.exp_p04_common import compute_all_metrics
+    avg_power_metrics = compute_all_metrics(y_true_power.ravel(), y_pred_power.ravel())
+    logger.info("完整验证集功率指标: RMSE=%.4f  MAE=%.4f  R2=%.4f",
+                avg_power_metrics["RMSE"], avg_power_metrics["MAE"], avg_power_metrics["R2"])
+
     # 保存结果
     optuna_path = metrics_h / f"{model_name}_optuna.json"
     result = {
         "model": model_name,
         "horizon": horizon,
         "best_params": best_params,
-        "best_value": avg_val_loss,      # 3-fold 平均值
+        "best_value": avg_val_loss,      # 3-fold 平均残差训练 loss
         "quick_best_value": study.best_value,  # 单 fold 搜索最优值
         "fold_losses": fold_losses,
+        "best_fold_idx": best_fold_idx,
+        "avg_power_metrics": avg_power_metrics,  # 完整验证集真实功率指标
         "n_trials": len(study.trials),
+        "prediction_mode": "residual",
     }
     with open(optuna_path, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
@@ -246,18 +331,21 @@ def run_optuna_for_model(model_name, horizon_cfg, base_cfg, logger):
 
 
 def run_baseline(model_name, horizon_cfg, base_cfg, logger):
-    """Baseline LSTM/BiLSTM，直接用固定参数在 CV 上评估。"""
+    """Baseline LSTM/BiLSTM，直接用固定参数在 CV 上评估（残差预测模式）。"""
     horizon = horizon_cfg["horizon"]
     hdir = SAMPLES_DIR / f"h{horizon}"
     metrics_h = METRICS_DIR / f"h{horizon}"
 
     X_train = np.load(hdir / "X_train_seq.npy")
-    y_train = np.load(hdir / "y_train.npy")
-    X_val = np.load(hdir / "X_val_seq.npy")
-    y_val = np.load(hdir / "y_val.npy")
+    y_residual_train = np.load(hdir / "y_train.npy")
+    y_anchor_train = np.load(hdir / "y_anchor_train.npy")
 
     meta = json.loads((hdir / "meta.json").read_text(encoding="utf-8"))
     seq_len, n_features = meta["lookback"], X_train.shape[2]
+
+    # 加载残差 scaler
+    from experiments.prediction.step4_optuna_hybrid.exp_p04_common import load_y_scaler_from_json
+    y_scaler = load_y_scaler_from_json(f"h{horizon}")
 
     params = horizon_cfg["baseline_params"][model_name]
     device = get_device()
@@ -266,12 +354,14 @@ def run_baseline(model_name, horizon_cfg, base_cfg, logger):
     folds = create_rolling_folds(n_total, n_folds=3, train_frac=base_cfg["rolling_train_frac"])
 
     val_losses = []
+    fold_power_metrics = []
     for fold_idx, (tr_idx, va_idx) in enumerate(folds):
         torch.manual_seed(42)
         np.random.seed(42)
 
         X_tr, X_va = X_train[tr_idx], X_train[va_idx]
-        y_tr, y_va = y_train[tr_idx], y_train[va_idx]
+        y_tr, y_va = y_residual_train[tr_idx], y_residual_train[va_idx]
+        y_anchor_va = y_anchor_train[va_idx]
 
         model_params = {k: v for k, v in params.items() if k not in ("lr", "batch_size")}
         model = build_model(
@@ -291,18 +381,41 @@ def run_baseline(model_name, horizon_cfg, base_cfg, logger):
         )
         vloss = eval_loss(model, val_loader, nn.MSELoss(), device)
         val_losses.append(vloss)
-        logger.info("  fold %d  val_loss=%.6f", fold_idx, vloss)
+
+        # 残差预测 → 重构功率 → 计算真实功率指标
+        y_pred_residual_scaled = predict(model, X_va, device)
+        y_pred_residual = y_scaler.inverse_transform(y_pred_residual_scaled)
+        y_true_power = y_anchor_va + y_va  # 真实功率 = 锚点 + 真实残差
+        y_pred_power = y_anchor_va + y_pred_residual  # 预测功率 = 锚点 + 预测残差
+        from experiments.prediction.step4_optuna_hybrid.exp_p04_common import compute_all_metrics
+        m = compute_all_metrics(y_true_power.ravel(), y_pred_power.ravel())
+        fold_power_metrics.append(m)
+
+        logger.info("  fold %d  val_loss=%.6f  power_RMSE=%.4f  power_MAE=%.4f",
+                    fold_idx, vloss, m["RMSE"], m["MAE"])
 
     avg_vloss = float(np.mean(val_losses))
+    avg_power_metrics = {
+        "RMSE": float(np.mean([m["RMSE"] for m in fold_power_metrics])),
+        "MAE": float(np.mean([m["MAE"] for m in fold_power_metrics])),
+        "MAPE": float(np.mean([m["MAPE"] for m in fold_power_metrics if not np.isnan(m["MAPE"])])),
+        "R2": float(np.mean([m["R2"] for m in fold_power_metrics])),
+    }
+    logger.info("Baseline 3-fold 平均: val_loss=%.6f  power_RMSE=%.4f  power_MAE=%.4f",
+                avg_vloss, avg_power_metrics["RMSE"], avg_power_metrics["MAE"])
+
     result = {
         "model": model_name, "horizon": horizon,
         "best_params": params, "best_value": avg_vloss,
+        "avg_power_metrics": avg_power_metrics,
+        "fold_power_metrics": fold_power_metrics,
         "note": "baseline_fixed_params",
+        "prediction_mode": "residual",
     }
     path = metrics_h / f"{model_name}_optuna.json"
     with open(path, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
-    logger.info("Baseline 结果已保存: %s  avg_val_loss=%.6f", path.name, avg_vloss)
+    logger.info("Baseline 结果已保存: %s", path.name)
     return result
 
 
@@ -310,7 +423,7 @@ def main():
     parser = argparse.ArgumentParser(description="EXP-P04 Optuna 调参")
     parser.add_argument("--horizon", type=int, choices=[1, 4, 16], required=True)
     parser.add_argument("--model", type=str, default=None,
-                        choices=["lstm", "bilstm", "cnn_lstm", "cnn_bilstm", "minipatchtst", "all"],
+                        choices=["cnn_bilstm", "all"],
                         help="指定模型，默认为 all（全部跑一遍）")
     args = parser.parse_args()
 

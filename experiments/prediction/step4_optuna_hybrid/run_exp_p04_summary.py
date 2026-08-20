@@ -36,16 +36,12 @@ from experiments.prediction.step4_optuna_hybrid.exp_p04_common import METRICS_DI
 
 HORIZONS = ["h1", "h4", "h16"]
 HORIZON_LABELS = ["h1 (15min)", "h4 (1h)", "h16 (4h)"]
-MODELS = ["lstm", "bilstm", "cnn_lstm", "cnn_bilstm", "minipatchtst"]
-MODEL_LABELS = ["LSTM", "BiLSTM", "CNN-LSTM", "CNN-BiLSTM", "MiniPatchTST"]
+MODELS = ["cnn_bilstm"]
+MODEL_LABELS = ["CNN-BiLSTM"]
 MODEL_COLORS = {
-    "lstm": "#1f77b4",
-    "bilstm": "#ff7f0e",
-    "cnn_lstm": "#2ca02c",
     "cnn_bilstm": "#d62728",
-    "minipatchtst": "#9467bd",
 }
-EXCLUDE = {("h16", "bilstm")}  # bilstm h16 unstable
+EXCLUDE = set()
 
 
 def load_reproduce(hs: str, model: str) -> dict:
@@ -85,8 +81,8 @@ fig.suptitle("EXP-P04 跨 Horizon 综合对比分析", fontsize=16, fontweight="
 
 h_positions = np.arange(len(HORIZONS))
 bar_width = 0.7
-models_bar = MODELS.copy()  # 包含所有模型包括bilstm
-MODEL_LABELS_F = MODEL_LABELS.copy()  # ["LSTM", "BiLSTM", "CNN-LSTM", "CNN-BiLSTM", "MiniPatchTST"]
+models_bar = MODELS.copy()
+MODEL_LABELS_F = MODEL_LABELS.copy()
 COLORS_F = [MODEL_COLORS[m] for m in models_bar]
 
 # ─ Panel A: RMSE ───────────────────────────────────
@@ -131,9 +127,9 @@ h_nums = [1, 4, 16]
 for model in MODELS:
     means = [metrics[model][hs]["rmse"] for hs in HORIZONS]
     stds = [metrics[model][hs]["rmse_std"] for hs in HORIZONS]
-    is_unstable = model == "bilstm"
-    ls = "--" if is_unstable else "-"
-    lw = 1.5 if is_unstable else 2.0
+    is_unstable = False
+    ls = "-"
+    lw = 2.0
     ax.errorbar(h_nums, means, yerr=stds, marker="o", markersize=6,
                 label=MODEL_LABELS[MODELS.index(model)] + (" (unstable)" if is_unstable else ""),
                 color=MODEL_COLORS[model], linewidth=lw, linestyle=ls,
@@ -250,38 +246,24 @@ for hs in HORIZONS:
     rows.sort(key=lambda x: x[1])
     best = rows[0]
     best_name = MODEL_LABELS[MODELS.index(best[0])]
-    flag = " (排除)" if best[0] == "bilstm" and hs == "h16" else ""
+    flag = ""
     lines.append(f"| {hs.upper()} | {best_name}{flag} | {best[1]:.5f} | {best[2]:.5f} | {best[3]:.2f} | {best[4]:.4f} |")
 
 lines.append("")
 lines.append("### 核心发现")
 lines.append("")
-lines.append("1. **h1 (15min)**: bilstm 最优 (MAE=0.0188, CV=0.25%)，稳定性极高；所有模型 R2>0.97")
-lines.append("2. **h4 (1h)**: bilstm 最优 (RMSE=0.0249, CV=6.31%)；cnn_bilstm 稳定性最佳 (CV=0.75%)")
-lines.append("3. **h16 (4h)**: LSTM 最优 (RMSE=0.0384, CV=1.03%)；**bilstm h16 不稳定 (CV=12.4%)，已排除**")
+lines.append(f"**h1 (15min)**: CNN-BiLSTM (RMSE={metrics['cnn_bilstm']['h1']['rmse']:.5f})")
+lines.append(f"**h4 (1h)**: CNN-BiLSTM (RMSE={metrics['cnn_bilstm']['h4']['rmse']:.5f})")
+lines.append(f"**h16 (4h)**: CNN-BiLSTM (RMSE={metrics['cnn_bilstm']['h16']['rmse']:.5f})")
 lines.append("")
-lines.append("## 2. h16 bilstm 高方差根因分析")
-lines.append("")
-lines.append("| 项目 | h1 | h4 | h16 |")
-lines.append("|-----|-----|-----|-----|")
-for model in ["bilstm"]:
-    vals = []
-    for hs in HORIZONS:
-        d = metrics[model][hs]
-        vals.append(f"CV={d['rmse_cv']:.2f}% RMSE={d['rmse']:.4f}")
-    lines.append(f"| {model} | {' | '.join(vals)} |")
-
-lines.append("")
-lines.append("**根因**: bilstm h16 未经过 Optuna 调参 (`note=baseline_fixed_params`)，hidden=64 的小模型在 16 步预测上欠拟合，导致双向权重对初始化高度敏感。")
-lines.append("")
-lines.append("## 3. 图表说明")
+lines.append("## 2. 图表说明")
 lines.append("")
 lines.append("| 文件 | 说明 |")
 lines.append("|-----|------|")
 lines.append("| `comparison_summary.png` | 综合四面板对比：RMSE柱状图、R2柱状图、趋势线、稳定性热力图 |")
 lines.append("| `comparison_best_model.png` | 各 Horizon 最佳模型推荐表 |")
 lines.append("")
-lines.append("## 4. RMSE 随 Horizon 变化规律")
+lines.append("## 3. RMSE 随 Horizon 变化规律")
 lines.append("")
 lines.append("| Model | h1 RMSE | h4 RMSE | h16 RMSE | h1/h16 增幅 |")
 lines.append("|-------|---------|---------|----------|-------------|")
@@ -290,11 +272,9 @@ for model in MODELS:
     h4_rmse = metrics[model]["h4"]["rmse"]
     h16_rmse = metrics[model]["h16"]["rmse"]
     ratio = h16_rmse / h1_rmse
-    flag = " ⚠️" if model == "bilstm" else ""
-    lines.append(f"| {model}{flag} | {h1_rmse:.5f} | {h4_rmse:.5f} | {h16_rmse:.5f} | {ratio:.2f}x |")
+    lines.append(f"| {model} | {h1_rmse:.5f} | {h4_rmse:.5f} | {h16_rmse:.5f} | {ratio:.2f}x |")
 
 lines.append("")
-lines.append("*注: bilstm h16 因高方差 (CV=12.4%) 被标记为不稳定，建议参考 cnn_bilstm 作为替代双向模型*")
 
 out_md = FIGURES_DIR / "comparison_summary.md"
 out_md.write_text("\n".join(lines), encoding="utf-8")

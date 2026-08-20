@@ -59,10 +59,63 @@ def _best_params(params: dict, model_name: str) -> dict:
     return out
 
 
+def train_and_evaluate_residual(model_name: str, params: dict, horizon: int, logger, device,
+                                 X_train, y_residual_train, X_val, y_residual_val,
+                                 X_test, y_residual_test, y_anchor_test,
+                                 y_scaler, seq_len, n_features, max_epochs, patience, lr, batch_size):
+    """用最优参数训练残差模型并在测试集上评估（重构后的真实功率）。"""
+    torch.manual_seed(42)
+    np.random.seed(42)
+
+    model = build_model(
+        model_name,
+        n_features=n_features,
+        seq_len=seq_len,
+        horizon=horizon,
+        **_best_params(params, model_name),
+    ).to(device)
+
+    train_loader = make_loader(X_train, y_residual_train, batch_size=batch_size, shuffle=True)
+    val_loader = make_loader(X_val, y_residual_val, batch_size=batch_size, shuffle=False)
+
+    t0 = time.time()
+    model, history = train_with_early_stop(
+        model, train_loader, val_loader,
+        lr=lr, max_epochs=max_epochs, patience=patience, device=device,
+    )
+    train_time = time.time() - t0
+
+    # 预测残差 (标准化后)
+    y_pred_residual_scaled = predict(model, X_test, device)
+    # 反标准化残差预测
+    y_pred_residual = y_scaler.inverse_transform(y_pred_residual_scaled)
+    # 重构功率: y_hat = y_anchor + y_residual_pred
+    y_pred_power = (y_anchor_test + y_pred_residual).astype(np.float32)
+
+    # 反标准化真实残差，计算真实功率
+    y_test_residual_raw = y_scaler.inverse_transform(y_residual_test)
+    y_true_power = (y_anchor_test + y_test_residual_raw).astype(np.float32)
+
+    metrics = compute_all_metrics(y_true_power.ravel(), y_pred_power.ravel())
+    metrics["training_time_sec"] = round(train_time, 2)
+    metrics["prediction_mode"] = "residual"
+
+    # 多步指标
+    if horizon > 1:
+        step_metrics = compute_metrics_multi_step(y_true_power, y_pred_power)
+        metrics["step_metrics"] = step_metrics
+        metrics["avg_MAE"] = float(np.mean([s["MAE"] for s in step_metrics]))
+        metrics["avg_RMSE"] = float(np.mean([s["RMSE"] for s in step_metrics]))
+        metrics["avg_MAPE"] = float(np.mean([s["MAPE"] for s in step_metrics if not np.isnan(s["MAPE"])]))
+        metrics["avg_R2"] = float(np.mean([s["R2"] for s in step_metrics]))
+
+    return model, history, metrics, y_pred_power
+
+
 def train_and_evaluate(model_name: str, params: dict, horizon: int, logger, device,
                        X_train, y_train, X_val, y_val, X_test, y_test,
                        y_scaler, seq_len, n_features, max_epochs, patience, lr, batch_size):
-    """用最优参数训练并在测试集上评估。"""
+    """用最优参数训练并在测试集上评估（直接预测模式）。"""
     torch.manual_seed(42)
     np.random.seed(42)
 
@@ -103,7 +156,7 @@ def train_and_evaluate(model_name: str, params: dict, horizon: int, logger, devi
         metrics["avg_MAPE"] = float(np.mean([s["MAPE"] for s in step_metrics if not np.isnan(s["MAPE"])]))
         metrics["avg_R2"] = float(np.mean([s["R2"] for s in step_metrics]))
 
-    return model, history, metrics
+    return model, history, metrics, y_pred
 
 
 def run_all_models(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
@@ -117,11 +170,13 @@ def run_all_models(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
 
     # 加载样本
     X_train = np.load(hdir / "X_train_seq.npy")
-    y_train = np.load(hdir / "y_train.npy")
+    y_residual_train = np.load(hdir / "y_train.npy")
     X_val = np.load(hdir / "X_val_seq.npy")
-    y_val = np.load(hdir / "y_val.npy")
+    y_residual_val = np.load(hdir / "y_val.npy")
     X_test = np.load(hdir / "X_test_seq.npy")
-    y_test = np.load(hdir / "y_test.npy")
+    y_residual_test = np.load(hdir / "y_test.npy")
+    # 锚点值 (用于残差重构: y_hat = y_anchor + y_residual_pred)
+    y_anchor_test = np.load(hdir / "y_anchor_test.npy")
     y_scaler = load_y_scaler_from_json(f"h{horizon}")
 
     meta = json.loads((hdir / "meta.json").read_text(encoding="utf-8"))
@@ -155,9 +210,10 @@ def run_all_models(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
         logger.info("  参数: %s", {**params, "batch_size": batch_size, "lr": lr_use})
 
         try:
-            model, history, metrics = train_and_evaluate(
+            model, history, metrics, y_pred_power = train_and_evaluate_residual(
                 mname, params, horizon, logger, device,
-                X_train, y_train, X_val, y_val, X_test, y_test,
+                X_train, y_residual_train, X_val, y_residual_val,
+                X_test, y_residual_test, y_anchor_test,
                 y_scaler, seq_len, n_features,
                 max_epochs, patience, lr_use, batch_size,
             )
@@ -171,11 +227,11 @@ def run_all_models(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
             hist_path = save_train_history(f"h{horizon}", f"{mname}_final", history)
             logger.info("  历史已保存: %s", hist_path.name)
 
-            # 保存预测
-            y_pred_scaled = predict(model, X_test, device)
-            y_pred = y_scaler.inverse_transform(y_pred_scaled)
-            y_test_raw = y_scaler.inverse_transform(y_test)
-            pred_path = save_predictions(f"h{horizon}", mname, y_test_raw.ravel(), y_pred.ravel())
+            # 计算真实功率用于保存预测
+            y_test_residual_raw = y_scaler.inverse_transform(y_residual_test)
+            y_true_power = (y_anchor_test + y_test_residual_raw).astype(np.float32)
+            # 保存预测 (真实功率 vs 预测功率)
+            pred_path = save_predictions(f"h{horizon}", mname, y_true_power.ravel(), y_pred_power.ravel())
             logger.info("  预测已保存: %s", pred_path.name)
 
             # 保存指标

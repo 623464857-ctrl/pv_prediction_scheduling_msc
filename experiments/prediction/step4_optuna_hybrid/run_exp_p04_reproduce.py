@@ -63,11 +63,12 @@ def run_reproduce(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
         d.mkdir(parents=True, exist_ok=True)
 
     X_train = np.load(hdir / "X_train_seq.npy")
-    y_train = np.load(hdir / "y_train.npy")
+    y_residual_train = np.load(hdir / "y_train.npy")
     X_val = np.load(hdir / "X_val_seq.npy")
-    y_val = np.load(hdir / "y_val.npy")
+    y_residual_val = np.load(hdir / "y_val.npy")
     X_test = np.load(hdir / "X_test_seq.npy")
-    y_test_raw_arr = np.load(hdir / "y_test_raw.npy")
+    y_residual_test = np.load(hdir / "y_test.npy")
+    y_anchor_test = np.load(hdir / "y_anchor_test.npy")
     y_scaler = load_y_scaler_from_json(f"h{horizon}")
 
     meta = json.loads((hdir / "meta.json").read_text(encoding="utf-8"))
@@ -110,8 +111,8 @@ def run_reproduce(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
                 **_best_params(params, mname),
             ).to(device)
 
-            train_loader = make_loader(X_train, y_train, batch_size=batch_size, shuffle=True)
-            val_loader = make_loader(X_val, y_val, batch_size=batch_size, shuffle=False)
+            train_loader = make_loader(X_train, y_residual_train, batch_size=batch_size, shuffle=True)
+            val_loader = make_loader(X_val, y_residual_val, batch_size=batch_size, shuffle=False)
 
             t0 = time.time()
             model, _ = train_with_early_stop(
@@ -120,14 +121,21 @@ def run_reproduce(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
             )
             elapsed = time.time() - t0
 
-            y_pred = y_scaler.inverse_transform(predict(model, X_test, device))
-            metrics = compute_all_metrics(y_test_raw_arr.ravel(), y_pred.ravel())
+            # 残差预测 → 重构功率
+            y_pred_residual_scaled = predict(model, X_test, device)
+            y_pred_residual = y_scaler.inverse_transform(y_pred_residual_scaled)
+            y_pred_power = (y_anchor_test + y_pred_residual).astype(np.float32)
+            # 真实功率
+            y_test_residual_raw = y_scaler.inverse_transform(y_residual_test)
+            y_true_power = (y_anchor_test + y_test_residual_raw).astype(np.float32)
+            # 计算指标
+            metrics = compute_all_metrics(y_true_power.ravel(), y_pred_power.ravel())
             metrics["seed"] = seed
             metrics["training_time_sec"] = round(elapsed, 2)
             all_metrics.append(metrics)
 
             logger.info("  seed=%d  MAE=%.4f  RMSE=%.4f  R2=%.4f  time=%.1fs",
-                         seed, metrics["MAE"], metrics["RMSE"], metrics["R2"], elapsed)
+                        seed, metrics["MAE"], metrics["RMSE"], metrics["R2"], elapsed)
 
         # 汇总统计
         rows_df = pd.DataFrame(all_metrics)
@@ -139,6 +147,7 @@ def run_reproduce(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
             "mean": {k: round(v, 6) for k, v in mean_row.items()},
             "std": {k: round(v, 6) for k, v in std_row.items()},
             "per_seed": all_metrics,
+            "prediction_mode": "residual",
         }
 
         out_path = metrics_h / f"{mname}_reproduce.json"
@@ -156,15 +165,21 @@ def run_reproduce(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
             mname, n_features=n_features, seq_len=seq_len,
             horizon=horizon, **_best_params(params, mname),
         ).to(device)
-        train_loader = make_loader(X_train, y_train, batch_size=batch_size, shuffle=True)
-        val_loader = make_loader(X_val, y_val, batch_size=batch_size, shuffle=False)
+        train_loader = make_loader(X_train, y_residual_train, batch_size=batch_size, shuffle=True)
+        val_loader = make_loader(X_val, y_residual_val, batch_size=batch_size, shuffle=False)
         model_seed, _ = train_with_early_stop(
             model_seed, train_loader, val_loader,
             lr=lr_use, max_epochs=max_epochs, patience=patience, device=device,
         )
-        y_pred_seed = y_scaler.inverse_transform(predict(model_seed, X_test, device))
+        # 残差预测 → 重构功率
+        y_pred_residual_scaled = predict(model_seed, X_test, device)
+        y_pred_residual = y_scaler.inverse_transform(y_pred_residual_scaled)
+        y_pred_power_seed = (y_anchor_test + y_pred_residual).astype(np.float32)
+        # 真实功率
+        y_test_residual_raw = y_scaler.inverse_transform(y_residual_test)
+        y_true_power_seed = (y_anchor_test + y_test_residual_raw).astype(np.float32)
         pred_path = save_predictions(f"h{horizon}", f"{mname}_seed42",
-                                    y_test_raw_arr.ravel(), y_pred_seed.ravel())
+                                    y_true_power_seed.ravel(), y_pred_power_seed.ravel())
         logger.info("  seed=42 预测已保存: %s", pred_path.name)
 
         model_path = models_h / f"{mname}_seed42.pt"

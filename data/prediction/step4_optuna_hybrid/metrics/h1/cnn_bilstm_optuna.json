@@ -2,20 +2,28 @@
   "model": "cnn_bilstm",
   "horizon": 1,
   "best_params": {
-    "conv_channels": "16",
+    "conv_channels": "64",
     "kernel_size": "3",
     "bilstm_hidden": "128",
     "bilstm_layers": "1",
-    "dropout": "0.2",
-    "lr": "0.0001",
-    "batch_size": "64"
+    "dropout": "0.1",
+    "lr": "0.001",
+    "batch_size": "32"
   },
-  "best_value": 0.14741523219299257,
-  "quick_best_value": 0.1066950822574009,
+  "best_value": 0.6675162285108641,
+  "quick_best_value": 0.9864933224312086,
   "fold_losses": [
-    0.10863304406032787,
-    0.10746586128721876,
-    0.22614679123143108
+    0.8834847270108633,
+    0.525612993996986,
+    0.5934509645247428
   ],
-  "n_trials": 8
+  "best_fold_idx": 1,
+  "avg_power_metrics": {
+    "MAE": 0.5492675304412842,
+    "RMSE": 1.1042117463512282,
+    "MAPE": 139.70762634277344,
+    "R2": 0.03439652919769287
+  },
+  "n_trials": 8,
+  "prediction_mode": "residual"
 }

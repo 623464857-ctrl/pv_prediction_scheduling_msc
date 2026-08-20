@@ -2,15 +2,6 @@
     "horizon": 16,
     "horizon_label": "4h",
     "model_search_space": {
-        "cnn_lstm": {
-            "conv_channels": [16, 32, 64],
-            "kernel_size": [3, 5],
-            "lstm_hidden": [32, 64, 128],
-            "lstm_layers": [1, 2],
-            "dropout": [0.1, 0.2, 0.3],
-            "lr": [1e-4, 1e-3],
-            "batch_size": [32, 64]
-        },
         "cnn_bilstm": {
             "conv_channels": [16, 32, 64],
             "kernel_size": [3, 5],
@@ -19,23 +10,10 @@
             "dropout": [0.1, 0.2, 0.3],
             "lr": [1e-4, 1e-3],
             "batch_size": [32, 64]
-        },
-        "minipatchtst": {
-            "patch_len": [4, 8],
-            "stride": [2, 4],
-            "d_model": [32, 64],
-            "n_heads": [2, 4],
-            "num_layers": [1, 2],
-            "dropout": [0.1, 0.2],
-            "lr": [1e-4, 1e-3],
-            "batch_size": [32, 64]
         }
     },
-    "baseline_models": ["lstm", "bilstm"],
-    "baseline_params": {
-        "lstm": {"hidden": 64, "layers": 2, "dropout": 0.2, "lr": 1e-3, "batch_size": 64},
-        "bilstm": {"hidden": 64, "layers": 2, "dropout": 0.2, "lr": 1e-3, "batch_size": 64}
-    },
+    "baseline_models": [],
+    "baseline_params": {},
     "n_epochs_trial": 12,
     "patience_trial": 3,
     "log_file": "EXP-P04_h16.log"

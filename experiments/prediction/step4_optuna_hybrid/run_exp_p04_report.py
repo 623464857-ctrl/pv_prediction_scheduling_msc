@@ -137,7 +137,7 @@ def _build_metrics_list(horizon: str, all_models: list[str]) -> list[dict]:
 def _plot_comparison_horizons(base_cfg: dict, logger):
     """绘制三个 horizon 的 MAE/RMSE/R² 对比柱状图。"""
     horizons = [(1, "15min"), (4, "1h"), (16, "4h")]
-    all_models = ["lstm", "bilstm", "cnn_lstm", "cnn_bilstm", "minipatchtst", "afsa_patchtst"]
+    all_models = ["cnn_bilstm"]
 
     mae_data, rmse_data, r2_data = {}, {}, {}
     for h, hlabel in horizons:

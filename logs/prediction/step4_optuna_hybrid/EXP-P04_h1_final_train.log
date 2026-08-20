@@ -4,39 +4,11 @@
 [INFO] ============================================================
 [INFO] 最终训练  horizon=1  train=49111  val=10524  test=10524
 [INFO] ----------------------------------------
-[INFO] 训练模型: lstm  horizon=1
-[INFO]   参数: {'hidden': 64, 'layers': 2, 'dropout': 0.2, 'batch_size': 64, 'lr': 0.001}
-[INFO]   模型已保存: lstm_final.pt
-[INFO]   历史已保存: lstm_final_train_history.csv
-[INFO]   预测已保存: lstm_test.csv
-[INFO]   指标: MAE=0.0177  RMSE=0.0440  MAPE=19.04%  R2=0.9742
-[INFO] ----------------------------------------
-[INFO] 训练模型: bilstm  horizon=1
-[INFO]   参数: {'hidden': 64, 'layers': 2, 'dropout': 0.2, 'batch_size': 64, 'lr': 0.001}
-[INFO]   模型已保存: bilstm_final.pt
-[INFO]   历史已保存: bilstm_final_train_history.csv
-[INFO]   预测已保存: bilstm_test.csv
-[INFO]   指标: MAE=0.0187  RMSE=0.0456  MAPE=19.49%  R2=0.9723
-[INFO] ----------------------------------------
-[INFO] 训练模型: cnn_lstm  horizon=1
-[INFO]   参数: {'conv_channels': '16', 'kernel_size': '5', 'lstm_hidden': '64', 'lstm_layers': '1', 'dropout': '0.1', 'batch_size': 32, 'lr': 0.001}
-[INFO]   模型已保存: cnn_lstm_final.pt
-[INFO]   历史已保存: cnn_lstm_final_train_history.csv
-[INFO]   预测已保存: cnn_lstm_test.csv
-[INFO]   指标: MAE=0.0199  RMSE=0.0438  MAPE=23.59%  R2=0.9745
-[INFO] ----------------------------------------
 [INFO] 训练模型: cnn_bilstm  horizon=1
-[INFO]   参数: {'conv_channels': '16', 'kernel_size': '3', 'bilstm_hidden': '128', 'bilstm_layers': '1', 'dropout': '0.2', 'batch_size': 64, 'lr': 0.0001}
+[INFO]   参数: {'conv_channels': '64', 'kernel_size': '3', 'bilstm_hidden': '128', 'bilstm_layers': '1', 'dropout': '0.1', 'batch_size': 32, 'lr': 0.001}
 [INFO]   模型已保存: cnn_bilstm_final.pt
 [INFO]   历史已保存: cnn_bilstm_final_train_history.csv
 [INFO]   预测已保存: cnn_bilstm_test.csv
-[INFO]   指标: MAE=0.0212  RMSE=0.0426  MAPE=21.39%  R2=0.9758
-[INFO] ----------------------------------------
-[INFO] 训练模型: minipatchtst  horizon=1
-[INFO]   参数: {'patch_len': '8', 'stride': '2', 'd_model': '32', 'n_heads': '2', 'num_layers': '2', 'dropout': '0.2', 'batch_size': 64, 'lr': 0.001}
-[INFO]   模型已保存: minipatchtst_final.pt
-[INFO]   历史已保存: minipatchtst_final_train_history.csv
-[INFO]   预测已保存: minipatchtst_test.csv
-[INFO]   指标: MAE=0.0223  RMSE=0.0419  MAPE=22.75%  R2=0.9767
+[INFO]   指标: MAE=0.0120  RMSE=0.0304  MAPE=12.09%  R2=0.9877
 [INFO] ============================================================
 [INFO] 所有模型最终训练完成！

@@ -77,11 +77,13 @@ def check_files(horizon: str) -> None:
     # Samples
     for f in ("X_train_seq.npy", "X_val_seq.npy", "X_test_seq.npy",
               "y_train.npy", "y_val.npy", "y_test.npy",
+              "y_anchor_train.npy", "y_anchor_val.npy", "y_anchor_test.npy",
+              "y_residual_train_raw.npy", "y_residual_val_raw.npy", "y_residual_test_raw.npy",
               "test_timestamps.csv", "scaler_params.json", "meta.json"):
         files.append((SAMPLES_DIR / hs / f, f"SAMPLES / {f}"))
 
     # Models & predictions
-    for model in MODEL_ORDER[:5]:  # lstm~minipatchtst
+    for model in MODEL_ORDER:  # cnn_bilstm
         for suffix, label in [("_final.pt", "FINAL.pt"), ("_seed42.pt", "SEED.pt")]:
             files.append((MODELS_DIR / hs / f"{model}{suffix}",
                          f"MODEL / {model}{suffix}"))
@@ -99,7 +101,7 @@ def check_files(horizon: str) -> None:
                 "training_time.png", "predictions_overlay.png"):
         files.append((FIGURES_DIR / hs / fig, f"FIG    / {fig}"))
 
-    for model in MODEL_ORDER[:5]:
+    for model in MODEL_ORDER:
         for prefix in ("pred_", "loss_"):
             files.append((FIGURES_DIR / hs / f"{prefix}{model}.png",
                          f"FIG    / {prefix}{model}.png"))
@@ -567,10 +569,10 @@ def check_config_consistency() -> None:
         _check(f"配置 lookback [h{h}]", f"h{h}",
                cfg.get("horizon") == h,
                f"horizon={cfg.get('horizon')} expected={h}")
-        # Reproduce seeds should match base
-        _check(f"配置 seeds [h{h}]", f"h{h}",
-               cfg.get("baseline_params", {}).get("lstm", {}).get("batch_size", 0) > 0,
-               "baseline_params 缺失或异常")
+        # model_search_space should have cnn_bilstm
+        _check(f"配置 search_space [h{h}]", f"h{h}",
+               "cnn_bilstm" in cfg.get("model_search_space", {}),
+               "model_search_space 缺失 cnn_bilstm")
 
 
 # ---------------------------------------------------------------------------

@@ -24,16 +24,10 @@ REPORTS_DIR = STEP4_ROOT / "reports"
 LOG_DIR = PROJECT_ROOT / "logs" / "prediction" / "step4_optuna_hybrid"
 
 MODEL_DISPLAY_NAMES = {
-    "lstm": "LSTM",
-    "bilstm": "BiLSTM",
-    "cnn_lstm": "CNN-LSTM",
     "cnn_bilstm": "CNN-BiLSTM",
-    "minipatchtst": "MiniPatchTST",
-    "patchtst": "PatchTST",
-    "afsa_patchtst": "AFSA-PatchTST (old)",
 }
 
-MODEL_ORDER = ["lstm", "bilstm", "cnn_lstm", "cnn_bilstm", "minipatchtst", "afsa_patchtst"]
+MODEL_ORDER = ["cnn_bilstm"]
 
 
 # ---------------------------------------------------------------------------
