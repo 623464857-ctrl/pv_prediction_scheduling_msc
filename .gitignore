@@ -3,3 +3,8 @@ data/prediction/step1_preprocessing/processed/solar_stations_long.csv
 data/prediction/step5_new_experiments/samples/h1/X_train_seq.npy
 data/prediction/step5_new_experiments/samples/h4/X_train_seq.npy
 data/prediction/step5_new_experiments/samples/h16/X_train_seq.npy
+
+# Step4 sample files — training sequences (large, regenerated from raw data)
+data/prediction/step4_optuna_hybrid/samples/h1_lb*_wrf_*/X_train_seq.npy
+data/prediction/step4_optuna_hybrid/samples/h4_lb*_wrf_*/X_train_seq.npy
+data/prediction/step4_optuna_hybrid/samples/h16_lb*_wrf_*/X_train_seq.npy
