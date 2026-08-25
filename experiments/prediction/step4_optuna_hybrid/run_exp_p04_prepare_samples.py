@@ -1,7 +1,7 @@
 """
 python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_prepare_samples --horizon 1
-python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_prepare_samples --horizon 4
-python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_prepare_samples --horizon 16
+python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_prepare_samples --horizon 4 --lookback 48 --wrf_version physical
+python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_prepare_samples --horizon 16 --lookback 96 --wrf_version minimal
 """
 
 import argparse
@@ -40,23 +40,36 @@ STEP1_FEATURES = [
     "data_quality_score",
 ]
 
-# Open-Meteo 天气预报特征（温度、湿度、天气代码的衍生特征）
-# 与 step1 特征合并后，由 wrf_feature_engineering.py 生成
-# 精选特征：去除冗余（多项式变换、重复交互、零方差标志），
-# 保留物理意义明确、对光伏预测直接有用的特征
+# WRF 天气预报特征全集（9个，plan.md Section 3 定义）
 WRF_FORECAST_FEATURES = [
-    # ── 辐照度预报（对光伏最关键）───────────────────────────────────
-    "wrf_gti_wm2",                   # 预报倾斜面总辐照度 ← 最重要
-    "wrf_tsi_wm2",                   # 预报总太阳辐照度（补充 GTI）
-    "wrf_clearness_index",           # 晴空指数（云层透明度代理）
-    # ── 气象基础量 ────────────────────────────────────────────────
-    "wrf_temperature_c",             # 预报温度（影响光伏板效率）
-    "wrf_relative_humidity_pct",     # 预报湿度（大气透明度）
-    "wrf_weather_code",              # 天气代码（综合天气状态）
-    "wrf_dew_point_c",              # 估算露点（雾/霜冻预警）
-    # ── 云量/天气分类（综合覆盖，无需多个子标志）─────────────────
-    "wrf_cloud_cover_ratio",         # 云量比例（0~1）
+    "wrf_gti_wm2",
+    "wrf_tsi_wm2",
+    "wrf_clearness_index",
+    "wrf_temperature_c",
+    "wrf_relative_humidity_pct",
+    "wrf_weather_code",
+    "wrf_dew_point_c",
+    "wrf_cloud_cover_ratio",
 ]
+
+# WRF 特征子集（plan.md Section 3）
+# - full:  全部 8 个特征
+# - physical: 辐照度 + 晴空指数 + 云量 + 温度（5个）
+# - minimal: 仅辐照度 + 云量（2个）
+WRF_FEATURE_SUBSETS = {
+    "full": WRF_FORECAST_FEATURES,
+    "physical": [
+        "wrf_gti_wm2",
+        "wrf_tsi_wm2",
+        "wrf_clearness_index",
+        "wrf_cloud_cover_ratio",
+        "wrf_temperature_c",
+    ],
+    "minimal": [
+        "wrf_gti_wm2",
+        "wrf_cloud_cover_ratio",
+    ],
+}
 
 # Open-Meteo forecast_hourly 数据说明：
 # 每个时间戳 T 的值 = 在 T-4h 发出的预报，内容是 T 时刻的天气预报
@@ -177,19 +190,40 @@ def build_windows_with_forecast_aligned(
 def main():
     parser = argparse.ArgumentParser(description="构造多 horizon 样本并保存")
     parser.add_argument("--horizon", type=int, choices=[1, 4, 16], required=True)
+    parser.add_argument("--lookback", type=int, default=None,
+                        help="lookback 步数 (默认: base.json 中的值). "
+                             "计划实验: 16, 32, 48, 96")
+    parser.add_argument("--wrf_version", type=str, default=None,
+                        choices=["full", "physical", "minimal"],
+                        help="WRF 特征版本 (默认: full). "
+                             "plan.md Phase 2 WRF 消融实验")
     args = parser.parse_args()
 
     horizon = args.horizon
-    hdir = SAMPLES_DIR / f"h{horizon}"
+    base_cfg = load_config("exp_p04_base.json")
+
+    # lookback: 默认取 base.json 中的值
+    lookback = args.lookback if args.lookback is not None else base_cfg["lookback"]
+
+    # wrf_version: 默认取 "full"
+    wrf_version = args.wrf_version if args.wrf_version is not None else "full"
+    wrf_feature_list = WRF_FEATURE_SUBSETS[wrf_version]
+
+    # 输出目录结构: h{horizon}_lb{lookback}_wrf_{version}
+    # 同一 horizon 不同 lookback/wrf_version 的样本分开存储
+    hdir = SAMPLES_DIR / f"h{horizon}_lb{lookback}_wrf_{wrf_version}"
     hdir.mkdir(parents=True, exist_ok=True)
 
-    logger = setup_logger("prepare_samples", f"EXP-P04_h{horizon}_prepare_samples.log")
+    logger = setup_logger(
+        "prepare_samples",
+        f"EXP-P04_h{horizon}_lb{lookback}_wrf_{wrf_version}_prepare_samples.log"
+    )
     logger.info("=" * 60)
-    logger.info("开始构造 horizon=%d 样本", horizon)
+    logger.info("开始构造 horizon=%d 样本  lookback=%d  wrf_version=%s",
+                horizon, lookback, wrf_version)
     t0 = time.time()
 
     # ── 1. 加载原始数据（与 step3 相同数据源） ─────────────────────────────
-    base_cfg = load_config("exp_p04_base.json")
     data_path = PROJECT_ROOT / base_cfg["data_raw_path"]
     logger.info("加载数据: %s", data_path)
 
@@ -200,31 +234,26 @@ def main():
 
     # ── 2. 验证特征列 ─────────────────────────────────────────────────────
     missing_step1 = [c for c in STEP1_FEATURES if c not in df.columns]
-    missing_wrf = [c for c in WRF_FORECAST_FEATURES if c not in df.columns]
+    missing_wrf = [c for c in wrf_feature_list if c not in df.columns]
     if missing_step1:
         logger.error("缺少 step1 列: %s", missing_step1)
         sys.exit(1)
     if missing_wrf:
-        logger.error("缺少 WRF 列: %s", missing_wrf)
+        logger.error("缺少 WRF 列 (%s): %s", wrf_version, missing_wrf)
         sys.exit(1)
 
     # ── 3. 构造序列 ───────────────────────────────────────────────────────
-    lookback = base_cfg["lookback"]
-
     # 分离 step1 特征和 WRF 特征
-    # step1 特征: 用于 lookback 历史窗口 (包含历史辐照度/功率趋势)
     step1_arr = df[STEP1_FEATURES].to_numpy(dtype=np.float64)       # (N, 13)
-    # WRF 特征: 用于 per-horizon aligned forecast
-    wrf_arr = df[WRF_FORECAST_FEATURES].to_numpy(dtype=np.float64)  # (N, 9)
-    target = df["power_pu"].to_numpy(dtype=np.float64)               # (N,)
+    wrf_arr = df[wrf_feature_list].to_numpy(dtype=np.float64)      # (N, n_wrf)
+    target = df["power_pu"].to_numpy(dtype=np.float64)             # (N,)
 
     logger.info("构造序列: lookback=%d, horizon=%d", lookback, horizon)
     logger.info("  step1 特征: %d 维 (历史 lookback 窗口)", len(STEP1_FEATURES))
-    logger.info("  WRF forecast 特征: %d 维 (per-horizon aligned)", len(WRF_FORECAST_FEATURES))
-    logger.info("  特征结构: 每步 lookback 同时含 step1 + WRF aligned forecast")
+    logger.info("  WRF forecast 特征: %d 维 (%s, per-horizon aligned)", len(wrf_feature_list), wrf_version)
     logger.info("  WRF aligned: lookback 步 step 的 WRF = wrf[t_pred + step]")
     logger.info("  即: step=0 时 WRF=wrf[t_pred] (覆盖 t_pred 天气, 4h old forecast)")
-    logger.info("       step=15 时 WRF=wrf[t_pred+15] (覆盖 t_pred+15 天气, 0h old forecast)")
+    logger.info("       step=last 时 WRF=wrf[t_pred+lookback-1] (覆盖 t_pred+lookback-1 天气, 0h old forecast)")
     logger.info("  核心: 最后一步 WRF 直接覆盖首个预测目标功率的天气条件")
 
     X_all, y_residual_all, y_anchor_all, valid_mask = build_windows_with_forecast_aligned(
@@ -301,9 +330,9 @@ def main():
     scaler_params = {
         "mean": scaler.mean_.tolist(),
         "scale": scaler.scale_.tolist(),
-        "feature_cols": f"step1({len(STEP1_FEATURES)})+wrf_aligned({len(WRF_FORECAST_FEATURES)})",
+        "feature_cols": f"step1({len(STEP1_FEATURES)})+wrf_aligned_{wrf_version}({len(wrf_feature_list)})",
         "step1_feature_cols": STEP1_FEATURES,
-        "wrf_forecast_feature_cols": WRF_FORECAST_FEATURES,
+        "wrf_forecast_feature_cols": wrf_feature_list,
         "n_total_features": n_total_features,
         "y_mean": y_scaler.mean_.tolist(),
         "y_scale": y_scaler.scale_.tolist(),
@@ -324,10 +353,11 @@ def main():
     meta = {
         "lookback": lookback,
         "horizon": horizon,
+        "wrf_version": wrf_version,
         "n_features": n_total_features,
-        "feature_cols": f"step1({len(STEP1_FEATURES)})+wrf_aligned({len(WRF_FORECAST_FEATURES)})",
+        "feature_cols": f"step1({len(STEP1_FEATURES)})+wrf_aligned_{wrf_version}({len(wrf_feature_list)})",
         "step1_feature_cols": STEP1_FEATURES,
-        "wrf_forecast_feature_cols": WRF_FORECAST_FEATURES,
+        "wrf_forecast_feature_cols": wrf_feature_list,
         "n_train": n_train,
         "n_val": n_val,
         "n_test": n_test,

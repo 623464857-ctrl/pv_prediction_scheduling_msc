@@ -1,0 +1,27 @@
+[INFO] 日志文件: logs\prediction\step4_optuna_hybrid\EXP-P04_phase1_h16.log
+[INFO] ============================================================
+[INFO] EXP-P04 统一实验执行器
+[INFO] Phase: 1  Horizon: 16
+[INFO] ============================================================
+[INFO] ============================================================
+[INFO] Phase 1: 模型对比实验
+[INFO] ============================================================
+[INFO] 样本: train=49100  val=10522  test=10522  n_features=21  seq_len=16
+[INFO] ──────────────────────────────────────────────────
+[INFO]   Horizon: h16  模型: cnn_bilstm
+[INFO] ──────────────────────────────────────────────────
+[INFO]   [Step 1] Optuna 调参...
+[INFO]   Optuna完成  3-fold_loss=0.432976  quick_best=0.432976
+[INFO]   fold 0  val_loss=0.369103
+[INFO]   fold 1  val_loss=0.263539
+[INFO]   fold 2  val_loss=0.385873
+[INFO]   3-fold 平均 val_loss=0.339505
+[INFO]   Optuna 结果已保存: cnn_bilstm_optuna.json
+[INFO]   [Step 2] Final Train (seed=42)...
+[INFO]   [Step 3] 多 Seed 复现 (已缓存，跳过)
+[INFO]   [Step 4] 绘图 (已缓存，跳过)
+[INFO]   [Step 4] 绘图...
+[INFO] ============================================================
+[INFO] Phase 1 完成！
+[INFO] ============================================================
+[INFO] 执行完成！

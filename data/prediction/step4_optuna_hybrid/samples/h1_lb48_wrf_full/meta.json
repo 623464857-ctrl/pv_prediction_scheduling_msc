@@ -1,0 +1,43 @@
+{
+  "lookback": 48,
+  "horizon": 1,
+  "wrf_version": "full",
+  "n_features": 21,
+  "feature_cols": "step1(13)+wrf_aligned_full(8)",
+  "step1_feature_cols": [
+    "power_ramp_15m_pu",
+    "total_irradiance_wm2",
+    "direct_normal_irradiance_wm2",
+    "global_horizontal_irradiance_wm2",
+    "air_temperature_c",
+    "atmosphere_hpa",
+    "relative_humidity_pct",
+    "daylight_flag",
+    "sin_hour",
+    "cos_hour",
+    "sin_dayofyear",
+    "cos_dayofyear",
+    "data_quality_score"
+  ],
+  "wrf_forecast_feature_cols": [
+    "wrf_gti_wm2",
+    "wrf_tsi_wm2",
+    "wrf_clearness_index",
+    "wrf_temperature_c",
+    "wrf_relative_humidity_pct",
+    "wrf_weather_code",
+    "wrf_dew_point_c",
+    "wrf_cloud_cover_ratio"
+  ],
+  "n_train": 49088,
+  "n_val": 10519,
+  "n_test": 10520,
+  "train_frac": 0.7,
+  "val_frac": 0.15,
+  "test_frac": 0.15,
+  "source_csv": "data\\prediction\\step1_preprocessing\\processed\\stations\\Site_1_with_wrf.csv",
+  "total_windows": 70127,
+  "prediction_mode": "residual",
+  "residual_formula": "Delta_y = y_future - y_anchor (y_anchor = power at t_lookback-1)",
+  "feature_alignment": "per-horizon WRF forecast (wrf[t+h] at prediction step h, issue_lag=4h)"
+}
