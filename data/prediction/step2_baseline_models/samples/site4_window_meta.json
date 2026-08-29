@@ -1,0 +1,54 @@
+{
+  "experiment_id": "EXP-P02",
+  "site_id": 4,
+  "target": "power_pu",
+  "features": [
+    "power_ramp_15m_pu",
+    "total_irradiance_wm2",
+    "direct_normal_irradiance_wm2",
+    "global_horizontal_irradiance_wm2",
+    "air_temperature_c",
+    "atmosphere_hpa",
+    "relative_humidity_pct",
+    "daylight_flag",
+    "sin_hour",
+    "cos_hour",
+    "sin_dayofyear",
+    "cos_dayofyear",
+    "data_quality_score"
+  ],
+  "n_features": 13,
+  "lookback": 16,
+  "horizon": 1,
+  "flat_input_dim": 208,
+  "n_samples": 70159,
+  "n_train": 49111,
+  "n_val": 10523,
+  "n_test": 10525,
+  "split": {
+    "train": [
+      0,
+      49111
+    ],
+    "val": [
+      49111,
+      59634
+    ],
+    "test": [
+      59634,
+      70159
+    ]
+  },
+  "train_ratio": 0.7,
+  "val_ratio": 0.15,
+  "test_ratio": 0.15,
+  "random_seed": 42,
+  "time_split_only": true,
+  "train_time_start": "2019-01-01T04:15:00.000000",
+  "train_time_end": "2020-05-26T17:45:00.000000",
+  "val_time_start": "2020-05-26T18:00:00.000000",
+  "val_time_end": "2020-09-13T08:30:00.000000",
+  "test_time_start": "2020-09-13T08:45:00.000000",
+  "test_time_end": "2020-12-31T23:45:00.000000",
+  "source_csv": "data\\prediction\\step1_preprocessing\\processed\\stations\\Site_4_preprocessed.csv"
+}

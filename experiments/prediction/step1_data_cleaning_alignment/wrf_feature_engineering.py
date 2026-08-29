@@ -1,16 +1,17 @@
 """
-Site 1 Weather Forecast Feature Engineering
+Site 4 Weather Forecast Feature Engineering
 ============================================
 实验编号: EXP-P01-WRF
-功能: 将Open-Meteo天气预报数据(温度、湿度、天气代码)合并到Site 1预处理数据中
+功能: 将Open-Meteo天气预报数据(温度、湿度、天气代码)合并到 Site 4 预处理数据中
 输入:
     - data/raw/open-meteo-40.81N114.80E769m.csv (天气预报)
-    - data/prediction/step1_preprocessing/processed/stations/Site_1_preprocessed.csv (站点数据)
+    - data/prediction/step1_preprocessing/processed/stations/Site_4_preprocessed.csv (站点数据)
 输出:
-    - data/prediction/step1_preprocessing/processed/stations/Site_1_with_wrf.csv
-    - data/prediction/step1_preprocessing/processed/stations/Site_1_wrf_features.csv
+    - data/prediction/step1_preprocessing/processed/stations/Site_4_with_wrf.csv
+    - data/prediction/step1_preprocessing/processed/stations/Site_4_wrf_features.csv
 """
 
+import argparse
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -36,6 +37,16 @@ PROJECT_ROOT = PROJECT_ROOT.parent
 
 RAW_WRF_DIR = PROJECT_ROOT / "data" / "raw"
 PROCESSED_DIR = PROJECT_ROOT / "data" / "prediction" / "step1_preprocessing" / "processed" / "stations"
+DEFAULT_SITE_ID = 4
+
+
+def site_paths(site_id: int) -> tuple[Path, Path, Path]:
+    key = f"Site_{site_id}"
+    return (
+        PROCESSED_DIR / f"{key}_preprocessed.csv",
+        PROCESSED_DIR / f"{key}_with_wrf.csv",
+        PROCESSED_DIR / f"{key}_wrf_features.csv",
+    )
 
 
 def load_weather_forecast() -> pd.DataFrame:
@@ -74,15 +85,15 @@ def load_weather_forecast() -> pd.DataFrame:
     return df
 
 
-def load_site_data() -> pd.DataFrame:
-    """加载Site 1预处理数据"""
-    site_path = PROCESSED_DIR / "Site_1_preprocessed.csv"
-    logger.info(f"加载Site 1数据: {site_path}")
+def load_site_data(site_id: int = DEFAULT_SITE_ID) -> pd.DataFrame:
+    """加载指定站点预处理数据"""
+    site_path, _, _ = site_paths(site_id)
+    logger.info(f"加载 Site {site_id} 数据: {site_path}")
 
     df = pd.read_csv(site_path)
     df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-    logger.info(f"Site 1数据: {len(df)} 行, 时间范围 {df['timestamp'].min()} 到 {df['timestamp'].max()}")
+    logger.info(f"Site {site_id} 数据: {len(df)} 行, 时间范围 {df['timestamp'].min()} 到 {df['timestamp'].max()}")
 
     return df
 
@@ -283,10 +294,10 @@ def create_wrf_features(wrf_df: pd.DataFrame) -> pd.DataFrame:
     return wrf_df
 
 
-def merge_and_save(site_df: pd.DataFrame, wrf_df: pd.DataFrame, output_dir: Path):
+def merge_and_save(site_df: pd.DataFrame, wrf_df: pd.DataFrame, output_dir: Path, site_id: int = DEFAULT_SITE_ID):
     """合并数据并保存"""
 
-    logger.info("合并天气预报特征到Site 1数据...")
+    logger.info(f"合并天气预报特征到 Site {site_id} 数据...")
 
     merged = site_df.merge(wrf_df, on='timestamp', how='left')
 
@@ -299,13 +310,12 @@ def merge_and_save(site_df: pd.DataFrame, wrf_df: pd.DataFrame, output_dir: Path
     if n_wrf_matched < n_original * 0.9:
         logger.warning("天气预报数据覆盖率较低，可能存在时间戳对齐问题！")
 
-    output_path = output_dir / "Site_1_with_wrf.csv"
+    _, output_path, features_path = site_paths(site_id)
     merged.to_csv(output_path, index=False)
     logger.info(f"已保存: {output_path}")
 
     wrf_feature_cols = [col for col in merged.columns if col.startswith('wrf_')]
     wrf_features_df = merged[['timestamp'] + wrf_feature_cols]
-    features_path = output_dir / "Site_1_wrf_features.csv"
     wrf_features_df.to_csv(features_path, index=False)
     logger.info(f"已保存: {features_path}")
 
@@ -319,17 +329,22 @@ def merge_and_save(site_df: pd.DataFrame, wrf_df: pd.DataFrame, output_dir: Path
 
 
 def main():
+    parser = argparse.ArgumentParser(description="WRF/Open-Meteo 特征工程")
+    parser.add_argument("--site-id", type=int, default=DEFAULT_SITE_ID, help="站点 ID（默认 4）")
+    args = parser.parse_args()
+    site_id = args.site_id
+
     logger.info("=" * 60)
-    logger.info("Site 1 WRF特征工程启动")
+    logger.info(f"Site {site_id} WRF特征工程启动")
     logger.info("=" * 60)
 
     wrf_df = load_weather_forecast()
     wrf_df = create_wrf_features(wrf_df)
-    site_df = load_site_data()
+    site_df = load_site_data(site_id)
 
     output_dir = PROCESSED_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
-    merged_df = merge_and_save(site_df, wrf_df, output_dir)
+    merged_df = merge_and_save(site_df, wrf_df, output_dir, site_id=site_id)
 
     logger.info("\n=== WRF特征统计 ===")
     wrf_cols = [col for col in merged_df.columns if col.startswith('wrf_')]
@@ -338,7 +353,7 @@ def main():
         logger.info(f"{col}: min={vals.min():.3f}, max={vals.max():.3f}, mean={vals.mean():.3f}, null={vals.isna().sum()}")
 
     logger.info("\n" + "=" * 60)
-    logger.info("Site 1 WRF特征工程完成")
+    logger.info(f"Site {site_id} WRF特征工程完成")
     logger.info("=" * 60)
 
 

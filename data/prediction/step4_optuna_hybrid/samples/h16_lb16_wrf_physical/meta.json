@@ -32,7 +32,7 @@
   "train_frac": 0.7,
   "val_frac": 0.15,
   "test_frac": 0.15,
-  "source_csv": "data\\prediction\\step1_preprocessing\\processed\\stations\\Site_1_with_wrf.csv",
+  "source_csv": "data\\prediction\\step1_preprocessing\\processed\\stations\\Site_4_with_wrf.csv",
   "total_windows": 70144,
   "prediction_mode": "residual",
   "residual_formula": "Delta_y = y_future - y_anchor (y_anchor = power at t_lookback-1)",

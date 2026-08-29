@@ -1,6 +1,6 @@
 {
   "experiment_id": "EXP-P03",
-  "site_id": 1,
+  "site_id": 4,
   "target": "power_pu",
   "features": [
     "power_ramp_15m_pu",
@@ -49,5 +49,5 @@
   "val_time_end": "2020-05-26T17:45:00.000000",
   "test_time_start": "2020-05-26T18:00:00.000000",
   "test_time_end": "2020-12-31T23:45:00.000000",
-  "source_csv": "data\\prediction\\step1_preprocessing\\processed\\stations\\Site_1_preprocessed.csv"
+  "source_csv": "data\\prediction\\step1_preprocessing\\processed\\stations\\Site_4_preprocessed.csv"
 }

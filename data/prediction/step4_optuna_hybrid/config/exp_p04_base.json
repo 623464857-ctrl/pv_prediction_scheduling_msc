@@ -1,6 +1,6 @@
 {
     "project_root": ".",
-    "data_raw_path": "data/prediction/step1_preprocessing/processed/stations/Site_1_with_wrf.csv",
+    "data_raw_path": "data/prediction/step1_preprocessing/processed/stations/Site_4_with_wrf.csv",
     "step4_root": "data/prediction/step4_optuna_hybrid",
     "lookback": 16,
     "train_frac": 0.70,
