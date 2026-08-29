@@ -1,17 +1,8 @@
 {
   "lookback": 16,
   "horizon": 1,
-  "n_features": 6,
-  "n_features_original": 13,
+  "n_features": 13,
   "feature_cols": [
-    "relative_humidity_pct",
-    "daylight_flag",
-    "sin_hour",
-    "cos_hour",
-    "sin_dayofyear",
-    "cos_dayofyear"
-  ],
-  "feature_cols_original": [
     "power_ramp_15m_pu",
     "total_irradiance_wm2",
     "direct_normal_irradiance_wm2",
@@ -26,8 +17,6 @@
     "cos_dayofyear",
     "data_quality_score"
   ],
-  "feature_selection_applied": true,
-  "feature_selection_threshold": 0.05,
   "n_train": 49111,
   "n_val": 10524,
   "n_test": 10524,

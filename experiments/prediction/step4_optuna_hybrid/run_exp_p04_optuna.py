@@ -31,9 +31,6 @@ from experiments.prediction.step4_optuna_hybrid.exp_p04_step_audit import (
     record_step_result,
 )
 from experiments.prediction.step4_optuna_hybrid.exp_p04_cv import create_rolling_folds
-from experiments.prediction.step4_optuna_hybrid.exp_p04_features import (
-    load_sample_arrays_with_feature_selection,
-)
 from experiments.prediction.step4_optuna_hybrid.exp_p04_hybrid_search import (
     run_all_strategies,
     train_params_to_best_params,
@@ -80,16 +77,13 @@ def run_hybrid_search_for_model(model_name, horizon_cfg, base_cfg, logger):
     logger.info("-" * 50)
     logger.info("开始 Optuna-AFSA 混合搜索: model=%s  horizon=%s", model_name, horizon)
 
-    samples = load_sample_arrays_with_feature_selection(
-        hdir, base_cfg, logger, horizon, target_mode="residual",
-    )
-    X_train = samples["X_train"]
-    y_residual_train = samples["y_train"]
-    X_val = samples["X_val"]
-    y_residual_val = samples["y_val"]
-    y_anchor_val = samples["y_anchor_val"]
+    X_train = np.load(hdir / "X_train_seq.npy")
+    y_residual_train = np.load(hdir / "y_train.npy")
+    X_val = np.load(hdir / "X_val_seq.npy")
+    y_residual_val = np.load(hdir / "y_val.npy")
+    y_anchor_val = np.load(hdir / "y_anchor_val.npy")
     _, _, n_features = X_train.shape
-    meta = samples["meta"]
+    meta = json.loads((hdir / "meta.json").read_text(encoding="utf-8"))
     seq_len = meta["lookback"]
 
     device = get_device()
@@ -223,14 +217,11 @@ def run_baseline(model_name, horizon_cfg, base_cfg, logger):
     hdir = load_sample_dir(horizon)
     metrics_h = METRICS_DIR / f"h{horizon}"
 
-    samples = load_sample_arrays_with_feature_selection(
-        hdir, base_cfg, logger, horizon, target_mode="residual",
-    )
-    X_train = samples["X_train"]
-    y_residual_train = samples["y_train"]
-    y_anchor_train = samples["y_anchor_train"]
+    X_train = np.load(hdir / "X_train_seq.npy")
+    y_residual_train = np.load(hdir / "y_train.npy")
+    y_anchor_train = np.load(hdir / "y_anchor_train.npy")
 
-    meta = samples["meta"]
+    meta = json.loads((hdir / "meta.json").read_text(encoding="utf-8"))
     seq_len, n_features = meta["lookback"], X_train.shape[2]
     y_scaler = load_y_scaler_from_json(f"h{horizon}")
 

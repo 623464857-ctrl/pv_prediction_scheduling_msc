@@ -35,9 +35,6 @@ from experiments.prediction.step4_optuna_hybrid.exp_p04_step_audit import (
     record_step_failure,
     record_step_result,
 )
-from experiments.prediction.step4_optuna_hybrid.exp_p04_features import (
-    load_sample_arrays_with_feature_selection,
-)
 from experiments.prediction.step4_optuna_hybrid.exp_p04_models import build_model
 from experiments.prediction.step4_optuna_hybrid.exp_p04_torch_utils import (
     eval_loss,
@@ -177,20 +174,18 @@ def run_all_models(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
     for d in (metrics_h, models_h, pred_h):
         d.mkdir(parents=True, exist_ok=True)
 
-    # 加载样本（含可选特征筛选）
-    samples = load_sample_arrays_with_feature_selection(
-        hdir, base_cfg, logger, horizon, target_mode="residual",
-    )
-    X_train = samples["X_train"]
-    y_residual_train = samples["y_train"]
-    X_val = samples["X_val"]
-    y_residual_val = samples["y_val"]
-    X_test = samples["X_test"]
-    y_residual_test = samples["y_test"]
-    y_anchor_test = samples["y_anchor_test"]
+    # 加载样本
+    X_train = np.load(hdir / "X_train_seq.npy")
+    y_residual_train = np.load(hdir / "y_train.npy")
+    X_val = np.load(hdir / "X_val_seq.npy")
+    y_residual_val = np.load(hdir / "y_val.npy")
+    X_test = np.load(hdir / "X_test_seq.npy")
+    y_residual_test = np.load(hdir / "y_test.npy")
+    # 锚点值 (用于残差重构: y_hat = y_anchor + y_residual_pred)
+    y_anchor_test = np.load(hdir / "y_anchor_test.npy")
     y_scaler = load_y_scaler_from_json(f"h{horizon}")
 
-    meta = samples["meta"]
+    meta = json.loads((hdir / "meta.json").read_text(encoding="utf-8"))
     seq_len, n_features = meta["lookback"], X_train.shape[2]
 
     device = get_device()

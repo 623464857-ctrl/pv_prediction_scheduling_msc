@@ -44,16 +44,7 @@
     "cos_dayofyear",
     "data_quality_score"
   ],
-  "feature_cols_selected": [
-    "relative_humidity_pct",
-    "daylight_flag",
-    "sin_hour",
-    "cos_hour",
-    "sin_dayofyear",
-    "cos_dayofyear"
-  ],
   "n_total_features": 13,
-  "n_selected_features": 6,
   "y_mean": [
     1.5506468318847255e-06
   ],

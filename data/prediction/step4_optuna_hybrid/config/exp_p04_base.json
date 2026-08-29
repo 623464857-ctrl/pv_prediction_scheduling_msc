@@ -24,18 +24,5 @@
     "final_max_epochs": 50,
     "final_patience": 8,
     "final_lr": 0.001,
-    "reproduce_seeds": [42, 43, 44, 45, 46],
-    "feature_selection": {
-        "enabled": true,
-        "method": "pearson_correlation",
-        "correlation_threshold": 0.05,
-        "force_keep": [
-            "power_pu_lag_0",
-            "sin_hour",
-            "cos_hour",
-            "sin_dayofyear",
-            "cos_dayofyear",
-            "daylight_flag"
-        ]
-    }
+    "reproduce_seeds": [42, 43, 44, 45, 46]
 }

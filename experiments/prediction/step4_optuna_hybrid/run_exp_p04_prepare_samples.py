@@ -22,10 +22,6 @@ from experiments.prediction.step4_optuna_hybrid.exp_p04_common import (
     load_config,
     setup_logger,
 )
-from experiments.prediction.step4_optuna_hybrid.exp_p04_features import (
-    apply_feature_selection_to_sequences,
-    get_feature_selection_config,
-)
 from experiments.prediction.step4_optuna_hybrid.exp_p04_step_audit import (
     record_step_failure,
     record_step_result,
@@ -90,12 +86,6 @@ def main():
     parser.add_argument("--horizon", type=int, choices=[1, 4, 16], required=True)
     parser.add_argument("--lookback", type=int, default=None,
                         help="lookback 步数 (默认: base.json 中的值)")
-    parser.add_argument("--correlation-threshold", type=float, default=None,
-                        help="特征相关性筛选阈值 (覆盖 config)")
-    parser.add_argument("--no-feature-selection", action="store_true",
-                        help="禁用特征相关性筛选")
-    parser.add_argument("--feature-selection", action="store_true",
-                        help="启用特征相关性筛选 (覆盖 config enabled=true)")
     args = parser.parse_args()
 
     horizon = args.horizon
@@ -172,30 +162,6 @@ def main():
     y_residual_val_s = y_scaler.transform(y_residual_val).astype(np.float32)
     y_residual_test_s = y_scaler.transform(y_residual_test).astype(np.float32)
 
-    fs_cfg = get_feature_selection_config(base_cfg)
-    if args.no_feature_selection:
-        fs_cfg["enabled"] = False
-    elif args.feature_selection:
-        fs_cfg["enabled"] = True
-    if args.correlation_threshold is not None:
-        fs_cfg["correlation_threshold"] = args.correlation_threshold
-
-    n_features_original = n_total_features
-    selection_result: dict = {}
-    if fs_cfg["enabled"]:
-        X_train_s, X_val_s, X_test_s, selected_features, selection_result = (
-            apply_feature_selection_to_sequences(
-                X_train_s, X_val_s, X_test_s,
-                y_residual_train_s, FEATURE_COLUMNS, fs_cfg, logger, horizon,
-                target_mode="residual", persist=True,
-            )
-        )
-        FEATURE_COLUMNS_SELECTED = selected_features
-        n_total_features = len(selected_features)
-    else:
-        FEATURE_COLUMNS_SELECTED = FEATURE_COLUMNS.copy()
-        logger.info("特征相关性筛选已禁用 (feature_selection.enabled=false)")
-
     def save_npy(arr, name):
         p = hdir / name
         np.save(p, arr)
@@ -218,9 +184,7 @@ def main():
         "mean": scaler.mean_.tolist(),
         "scale": scaler.scale_.tolist(),
         "feature_cols": FEATURE_COLUMNS,
-        "feature_cols_selected": FEATURE_COLUMNS_SELECTED,
-        "n_total_features": n_features_original,
-        "n_selected_features": n_total_features,
+        "n_total_features": n_total_features,
         "y_mean": y_scaler.mean_.tolist(),
         "y_scale": y_scaler.scale_.tolist(),
     }
@@ -237,11 +201,7 @@ def main():
         "lookback": lookback,
         "horizon": horizon,
         "n_features": n_total_features,
-        "n_features_original": n_features_original,
-        "feature_cols": FEATURE_COLUMNS_SELECTED,
-        "feature_cols_original": FEATURE_COLUMNS,
-        "feature_selection_applied": fs_cfg["enabled"],
-        "feature_selection_threshold": fs_cfg["correlation_threshold"] if fs_cfg["enabled"] else None,
+        "feature_cols": FEATURE_COLUMNS,
         "n_train": n_train,
         "n_val": n_val,
         "n_test": n_test,
@@ -270,9 +230,6 @@ def main():
             "n_val": n_val,
             "n_test": n_test,
             "X_shape": list(X_train_s.shape),
-            "n_features_original": n_features_original,
-            "n_features_selected": n_total_features,
-            "feature_selection_enabled": fs_cfg["enabled"],
             "sample_dir": str(hdir.relative_to(PROJECT_ROOT)),
             "elapsed_sec": round(elapsed, 1),
         },
