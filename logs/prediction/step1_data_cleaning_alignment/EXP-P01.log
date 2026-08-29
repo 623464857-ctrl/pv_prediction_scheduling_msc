@@ -1,57 +1,12 @@
-[INFO] EXP-P01 启动 | 项目根目录: pv_prediction_scheduling_msc
+[INFO] EXP-P01 启动 | 项目根目录: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_clean
 [INFO] 处理 Site_1 (Solar station site 1 (Nominal capacity-50MW).csv)
-[INFO] 已写出 Site_1_preprocessed.csv
-[INFO] 处理 Site_2 (Solar station site 2 (Nominal capacity-130MW).csv)
-[INFO] 已写出 Site_2_preprocessed.csv
-[INFO] 处理 Site_3 (Solar station site 3 (Nominal capacity-30MW).csv)
-[INFO] 已写出 Site_3_preprocessed.csv
-[INFO] 处理 Site_4 (Solar station site 4 (Nominal capacity-130MW).csv)
-[INFO] 已写出 Site_4_preprocessed.csv
-[INFO] 处理 Site_5 (Solar station site 5 (Nominal capacity-110MW).csv)
-[INFO] 已写出 Site_5_preprocessed.csv
-[INFO] 处理 Site_6 (Solar station site 6 (Nominal capacity-35MW).csv)
-[INFO] 已写出 Site_6_preprocessed.csv
-[INFO] 处理 Site_7 (Solar station site 7 (Nominal capacity-30MW).csv)
-[INFO] 已写出 Site_7_preprocessed.csv
-[INFO] 处理 Site_8 (Solar station site 8 (Nominal capacity-30MW).csv)
-[INFO] 已写出 Site_8_preprocessed.csv
-[INFO] 调度面板: 52608 行, 共同截止 2020-07-01 23:45:00
-
-================================================================================
-【实验日志摘要 — EXP-P01】
-
-【1. 本次实验做了什么】
-- 读取 8 个站点原始 CSV，执行字段统一、15 分钟时间轴重建
-- 物理边界清洗、功率非负/容量约束、Hampel 异常检测
-- 短时插值、夜间功率置零、时序剖面长缺失回填
-- 鲁棒标准化、衍生特征、质量评分、多站调度面板
-
-【2. 输入与输出】
-输入: data/raw
-输出: data/prediction/step1_preprocessing/processed
-
-【3. 关键运行统计】
-- 处理站点数: 8
-- 多站共同窗口截止: 2020-07-01 23:45:00
-- Site_1: 行数=70176, 插入缺口=0, 均值质量分=0.9896, 修复单元=23467
-- Site_2: 行数=70176, 插入缺口=0, 均值质量分=0.9919, 修复单元=9846
-- Site_3: 行数=52608, 插入缺口=0, 均值质量分=0.9884, 修复单元=37242
-- Site_4: 行数=70176, 插入缺口=0, 均值质量分=0.9993, 修复单元=35105
-- Site_5: 行数=70176, 插入缺口=0, 均值质量分=0.9688, 修复单元=17168
-- Site_6: 行数=70176, 插入缺口=0, 均值质量分=0.9996, 修复单元=1827
-- Site_7: 行数=70176, 插入缺口=0, 均值质量分=0.9950, 修复单元=9382
-- Site_8: 行数=70176, 插入缺口=768, 均值质量分=0.9897, 修复单元=7069
-- 问题修复量最高站点: Site_3 (37242 单元)
-
-【4. 产出文件】
-- data/prediction/step1_preprocessing/processed/solar_stations_long.csv
-- data/prediction/step1_preprocessing/processed/solar_site_quality_summary.csv
-- data/prediction/step1_preprocessing/processed/solar_feature_scaling_reference.csv
-- data/prediction/step1_preprocessing/processed/solar_dispatch_panel_common_window.csv
-- data/prediction/step1_preprocessing/processed/stations/Site_1~8_preprocessed.csv
-
-【5. 实验结论】
-- 多站面板已对齐至最短站点时间覆盖（Site 3: 2020-07-01），避免站间比较偏差
-- 异常码与物理越界值已标记并修复；Site 8 时间缺口已补齐并保留 row_inserted_by_reindex
-================================================================================
-[INFO] EXP-P01 结束 | 日志: logs/prediction/step1_data_cleaning_alignment/EXP-P01.log
+[INFO] EXP-P01 启动 | 项目根目录: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_clean
+[WARNING] 跳过 Solar station site 1 (Nominal capacity-50MW).csv（Git LFS 指针，未拉取实际数据）
+[WARNING] 跳过 Solar station site 2 (Nominal capacity-130MW).csv（Git LFS 指针，未拉取实际数据）
+[WARNING] 跳过 Solar station site 3 (Nominal capacity-30MW).csv（Git LFS 指针，未拉取实际数据）
+[WARNING] 跳过 Solar station site 4 (Nominal capacity-130MW).csv（Git LFS 指针，未拉取实际数据）
+[WARNING] 跳过 Solar station site 5 (Nominal capacity-110MW).csv（Git LFS 指针，未拉取实际数据）
+[WARNING] 跳过 Solar station site 6 (Nominal capacity-35MW).csv（Git LFS 指针，未拉取实际数据）
+[WARNING] 跳过 Solar station site 7 (Nominal capacity-30MW).csv（Git LFS 指针，未拉取实际数据）
+[WARNING] 跳过 Solar station site 8 (Nominal capacity-30MW).csv（Git LFS 指针，未拉取实际数据）
+[ERROR] 无可用站点被处理

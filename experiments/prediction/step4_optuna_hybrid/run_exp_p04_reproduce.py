@@ -1,6 +1,6 @@
 """
 python -m experiments.prediction.step4_optuna_hybrid.run_exp_p04_reproduce --horizon 1
-多 seed 复现：用 3 个 seed 重复最终训练，统计均值和标准差。
+多 seed 复现：用多个 seed 重复最终训练，统计均值和标准差（seed 列表见 exp_p04_base.json）。
 """
 
 import argparse
@@ -22,9 +22,17 @@ from experiments.prediction.step4_optuna_hybrid.exp_p04_common import (
     SAMPLES_DIR,
     compute_all_metrics,
     load_config,
+    load_sample_dir,
     load_y_scaler_from_json,
     save_predictions,
     setup_logger,
+)
+from experiments.prediction.step4_optuna_hybrid.exp_p04_step_audit import (
+    record_step_failure,
+    record_step_result,
+)
+from experiments.prediction.step4_optuna_hybrid.exp_p04_features import (
+    load_sample_arrays_with_feature_selection,
 )
 from experiments.prediction.step4_optuna_hybrid.exp_p04_models import build_model
 from experiments.prediction.step4_optuna_hybrid.exp_p04_torch_utils import (
@@ -55,23 +63,26 @@ def _best_params(params: dict, model_name: str) -> dict:
 
 def run_reproduce(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
     """多 seed 复现。"""
-    hdir = SAMPLES_DIR / f"h{horizon}"
+    hdir = load_sample_dir(horizon)
     metrics_h = METRICS_DIR / f"h{horizon}"
     models_h = MODELS_DIR / f"h{horizon}"
     pred_h = PRED_DIR / f"h{horizon}"
     for d in (metrics_h, models_h, pred_h):
         d.mkdir(parents=True, exist_ok=True)
 
-    X_train = np.load(hdir / "X_train_seq.npy")
-    y_residual_train = np.load(hdir / "y_train.npy")
-    X_val = np.load(hdir / "X_val_seq.npy")
-    y_residual_val = np.load(hdir / "y_val.npy")
-    X_test = np.load(hdir / "X_test_seq.npy")
-    y_residual_test = np.load(hdir / "y_test.npy")
-    y_anchor_test = np.load(hdir / "y_anchor_test.npy")
+    samples = load_sample_arrays_with_feature_selection(
+        hdir, base_cfg, logger, horizon, target_mode="residual",
+    )
+    X_train = samples["X_train"]
+    y_residual_train = samples["y_train"]
+    X_val = samples["X_val"]
+    y_residual_val = samples["y_val"]
+    X_test = samples["X_test"]
+    y_residual_test = samples["y_test"]
+    y_anchor_test = samples["y_anchor_test"]
     y_scaler = load_y_scaler_from_json(f"h{horizon}")
 
-    meta = json.loads((hdir / "meta.json").read_text(encoding="utf-8"))
+    meta = samples["meta"]
     seq_len, n_features = meta["lookback"], X_train.shape[2]
     device = get_device()
 
@@ -84,6 +95,7 @@ def run_reproduce(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
     logger.info("=" * 60)
     logger.info("多 Seed 复现  horizon=%d  seeds=%s", horizon, seeds)
 
+    summaries: dict[str, dict] = {}
     for mname in all_models:
         optuna_path = metrics_h / f"{mname}_optuna.json"
         if not optuna_path.exists():
@@ -184,9 +196,11 @@ def run_reproduce(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
 
         model_path = models_h / f"{mname}_seed42.pt"
         torch.save(model_seed.state_dict(), model_path)
+        summaries[mname] = summary
 
     logger.info("=" * 60)
     logger.info("多 Seed 复现完成！")
+    return summaries
 
 
 def main():
@@ -194,6 +208,7 @@ def main():
     parser.add_argument("--horizon", type=int, choices=[1, 4, 16], required=True)
     args = parser.parse_args()
 
+    t0 = time.time()
     horizon = args.horizon
     horizon_cfg = load_config(f"exp_p04_h{horizon}.json")
     base_cfg = load_config("exp_p04_base.json")
@@ -203,8 +218,41 @@ def main():
     logger.info("=" * 60)
     logger.info("EXP-P04 多 Seed 复现  horizon=%d", horizon)
 
-    run_reproduce(horizon, horizon_cfg, base_cfg, logger)
+    summaries = run_reproduce(horizon, horizon_cfg, base_cfg, logger)
+    elapsed = time.time() - t0
+    hs = f"h{horizon}"
+
+    if "cnn_bilstm" not in summaries:
+        raise RuntimeError("cnn_bilstm 多 seed 复现未成功")
+
+    rep = summaries["cnn_bilstm"]
+    mean, std = rep["mean"], rep["std"]
+    summary = {
+        "seeds": rep["seeds"],
+        "RMSE_mean": round(mean["RMSE"], 4),
+        "RMSE_std": round(std["RMSE"], 4),
+        "MAE_mean": round(mean["MAE"], 4),
+        "MAE_std": round(std["MAE"], 4),
+        "R2_mean": round(mean["R2"], 4),
+        "R2_std": round(std["R2"], 4),
+        "elapsed_sec": round(elapsed, 1),
+    }
+    artifacts = [
+        f"data/prediction/step4_optuna_hybrid/metrics/{hs}/cnn_bilstm_reproduce.json",
+        f"data/prediction/step4_optuna_hybrid/models/{hs}/cnn_bilstm_seed42.pt",
+        f"data/prediction/step4_optuna_hybrid/predictions/{hs}/cnn_bilstm_seed42_test.csv",
+    ]
+    record_step_result(
+        horizon, "reproduce", "success", log_file,
+        summary=summary, duration_sec=elapsed, artifacts=artifacts,
+    )
+    return horizon, log_file
 
 
 if __name__ == "__main__":
-    main()
+    t0 = time.time()
+    try:
+        main()
+    except Exception as e:
+        record_step_failure("reproduce", t0, e)
+        raise

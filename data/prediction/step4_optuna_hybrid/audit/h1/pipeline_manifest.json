@@ -1,0 +1,22 @@
+{
+  "prepare_samples": {
+    "status": "success",
+    "finished_at": "2026-08-30 01:15:39 +0800",
+    "duration_sec": 1.06,
+    "log_file": "EXP-P04_h1_lb16_prepare_samples.log",
+    "audit_file": "data\\prediction\\step4_optuna_hybrid\\audit\\h1\\prepare_samples.json",
+    "summary_keys": [
+      "lookback",
+      "n_train",
+      "n_val",
+      "n_test",
+      "X_shape",
+      "n_features_original",
+      "n_features_selected",
+      "feature_selection_enabled",
+      "sample_dir",
+      "elapsed_sec"
+    ]
+  },
+  "_updated_at": "2026-08-30 01:15:39 +0800"
+}

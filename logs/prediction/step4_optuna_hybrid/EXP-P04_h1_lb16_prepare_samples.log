@@ -1,0 +1,48 @@
+[INFO] 日志文件: logs\prediction\step4_optuna_hybrid\EXP-P04_h1_lb16_prepare_samples.log
+[INFO] ============================================================
+[INFO] 开始构造 horizon=1 样本  lookback=16
+[INFO] 加载数据: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_clean\data\prediction\step1_preprocessing\processed\stations\Site_4_preprocessed.csv
+[INFO] 原始行数: 70176  |  时间范围: 2019-01-01 00:00:00 ~ 2020-12-31 23:45:00
+[INFO] 构造序列: lookback=16, horizon=1, n_features=13
+[INFO] 总样本数: 70159  |  X shape: (70159, 16, 13)  |  残差 y shape: (70159, 1)
+[INFO] 训练集: 49111  验证集: 10524  测试集: 10524
+[INFO] === 特征相关性自动筛选 ===
+[INFO] 筛选阈值: r > 0.0500 (|r| <= 0.0500 或 r < -0.0500 剔除)
+[INFO] 强制保留特征: sin_hour, cos_hour, sin_dayofyear, cos_dayofyear, daylight_flag
+[INFO] 
+[INFO] 特征相关性评估结果:
+[INFO]   特征名称                                相关系数  决策
+[INFO]   power_ramp_15m_pu                -0.0711  ❌ 剔除 (负相关)
+[INFO]   total_irradiance_wm2             -0.0920  ❌ 剔除 (负相关)
+[INFO]   direct_normal_irradiance_wm2     -0.0358  ❌ 剔除 (|r| <= 0.05)
+[INFO]   global_horizontal_irradiance_wm2     -0.0359  ❌ 剔除 (|r| <= 0.05)
+[INFO]   air_temperature_c                -0.0451  ❌ 剔除 (|r| <= 0.05)
+[INFO]   atmosphere_hpa                    0.0067  ❌ 剔除 (|r| <= 0.05)
+[INFO]   relative_humidity_pct             0.0904  ✅ 保留
+[INFO]   daylight_flag                    -0.0145  ✅ 强制保留
+[INFO]   sin_hour                          0.2114  ✅ 强制保留
+[INFO]   cos_hour                          0.0092  ✅ 强制保留
+[INFO]   sin_dayofyear                     0.0000  ✅ 强制保留
+[INFO]   cos_dayofyear                    -0.0000  ✅ 强制保留
+[INFO]   data_quality_score               -0.0120  ❌ 剔除 (|r| <= 0.05)
+[INFO] 
+[INFO] 筛选结果: 原始 13 个特征 → 保留 6 个特征，剔除 7 个特征
+[INFO] 已保存特征列表到: data\prediction\step4_optuna_hybrid\feature_selection\selected_features_h1.json
+[INFO]   保存 X_train_seq.npy  ->  shape=(49111, 16, 6)
+[INFO]   保存 X_val_seq.npy  ->  shape=(10524, 16, 6)
+[INFO]   保存 X_test_seq.npy  ->  shape=(10524, 16, 6)
+[INFO]   保存 y_train.npy  ->  shape=(49111, 1)
+[INFO]   保存 y_val.npy  ->  shape=(10524, 1)
+[INFO]   保存 y_test.npy  ->  shape=(10524, 1)
+[INFO]   保存 y_anchor_train.npy  ->  shape=(49111, 1)
+[INFO]   保存 y_anchor_val.npy  ->  shape=(10524, 1)
+[INFO]   保存 y_anchor_test.npy  ->  shape=(10524, 1)
+[INFO]   保存 y_residual_train_raw.npy  ->  shape=(49111, 1)
+[INFO]   保存 y_residual_val_raw.npy  ->  shape=(10524, 1)
+[INFO]   保存 y_residual_test_raw.npy  ->  shape=(10524, 1)
+[INFO]   保存 scaler_params.json
+[INFO]   保存 test_timestamps.csv (10524 行)
+[INFO]   保存 meta.json
+[INFO] ============================================================
+[INFO] 样本构造完成！耗时: 1.1 秒
+[INFO] 保存目录: data\prediction\step4_optuna_hybrid\samples\h1_lb16

@@ -110,6 +110,11 @@ def map_columns(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(out)
 
 
+def _is_lfs_pointer(path: Path) -> bool:
+    with path.open("r", encoding="utf-8", errors="ignore") as f:
+        return f.read(80).startswith("version https://git-lfs.github.com/spec/v1")
+
+
 def parse_site_meta(filename: str) -> tuple[int, float, str]:
   site_m = re.search(r"site\s*(\d+)", filename, re.I)
   cap_m = re.search(r"capacity[-\s]*(\d+(?:\.\d+)?)\s*mw", filename, re.I)
@@ -278,6 +283,15 @@ def process_site(path: Path, logger: logging.Logger) -> tuple[pd.DataFrame, dict
     reindexed.loc[p_outlier, "power_mw"] = np.nan
     reindexed["power_pu"] = reindexed["power_mw"] / capacity_mw
 
+    # 3.7b 辐照-功率物理不一致修正（短时插值前）
+    irr = reindexed["total_irradiance_wm2"].fillna(0)
+    high_pwr_thresh = 0.05 * capacity_mw
+    inconsistent = (irr < 20) & (reindexed["power_mw"] > high_pwr_thresh)
+    if inconsistent.any():
+        reindexed.loc[inconsistent, "power_mw_outlier_flag"] = 1
+        reindexed.loc[inconsistent, "power_mw"] = np.nan
+        reindexed["power_pu"] = reindexed["power_mw"] / capacity_mw
+
     idx = pd.DatetimeIndex(reindexed["timestamp"])
 
     # 3.8 短时插值
@@ -286,12 +300,12 @@ def process_site(path: Path, logger: logging.Logger) -> tuple[pd.DataFrame, dict
         reindexed[col] = filled
         reindexed[f"{col}_imputed_flag"] = imputed.astype(np.int8)
 
-    # 3.10 夜间功率置零（剖面回填前）
-    night = reindexed["total_irradiance_wm2"].fillna(0) <= 5
-    night_miss = night & reindexed["power_mw"].isna()
-    if night_miss.any():
-        reindexed.loc[night_miss, "power_mw"] = 0.0
-        reindexed.loc[night_miss, "power_mw_imputed_flag"] = 1
+    # 3.10 低辐照功率置零（剖面回填前）：irr<=5 时强制 power=0，不仅限于 NaN
+    low_irr = reindexed["total_irradiance_wm2"].fillna(0) <= 5
+    to_zero = low_irr & (reindexed["power_mw"].fillna(0) != 0)
+    if to_zero.any():
+        reindexed.loc[to_zero, "power_mw"] = 0.0
+        reindexed.loc[to_zero, "power_mw_imputed_flag"] = 1
 
     # 3.9 剖面长缺失回填
     for col in CORE_FEATURES:
@@ -456,6 +470,9 @@ def main() -> None:
     all_scale_rows: list[dict] = []
 
     for path in csv_files:
+        if _is_lfs_pointer(path):
+            logger.warning("跳过 %s（Git LFS 指针，未拉取实际数据）", path.name)
+            continue
         df, stats = process_site(path, logger)
         out_path = OUT_STATIONS / f"{stats['site_key']}_preprocessed.csv"
         df.to_csv(out_path, index=False)
@@ -464,6 +481,10 @@ def main() -> None:
         scale_rows = stats.pop("scale_rows")
         all_scale_rows.extend(scale_rows)
         stats_list.append(stats)
+
+    if not stats_list:
+        logger.error("无可用站点被处理")
+        sys.exit(1)
 
     long_df = pd.concat(all_frames, ignore_index=True)
     long_path = OUT_PROCESSED / "solar_stations_long.csv"

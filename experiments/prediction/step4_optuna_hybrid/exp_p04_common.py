@@ -88,37 +88,26 @@ def set_seed(seed: int) -> None:
 # Samples
 # ---------------------------------------------------------------------------
 
-def _sample_dir(horizon: int, lookback: int = None, wrf_version: str = None) -> Path:
-    """解析样本目录路径。
+def _sample_dir(horizon: int, lookback: int | None = None) -> Path:
+    """解析样本目录: h{horizon}_lb{lookback}，兼容旧版目录命名。"""
+    if lookback is None:
+        lookback = load_config("exp_p04_base.json")["lookback"]
 
-    优先使用新版目录命名: h{horizon}_lb{lookback}_wrf_{version}
-    回退到旧版命名: h{horizon} (lookback=16, wrf_version=full)
+    new_dir = SAMPLES_DIR / f"h{horizon}_lb{lookback}"
+    if new_dir.exists():
+        return new_dir
 
-    Args:
-        horizon: 预测步长
-        lookback: 回看步数（默认从 meta.json 读取）
-        wrf_version: WRF 特征版本（默认从 meta.json 读取）
-    """
-    # 尝试新版目录
-    if lookback is not None and wrf_version is not None:
-        new_dir = SAMPLES_DIR / f"h{horizon}_lb{lookback}_wrf_{wrf_version}"
-        if new_dir.exists():
-            return new_dir
-    # 尝试从 meta.json 推断
-    for candidate in [
-        # 新版: 尝试从 base.json 推断
+    for candidate in (
         SAMPLES_DIR / f"h{horizon}_lb16_wrf_full",
-        # 旧版回退
         SAMPLES_DIR / f"h{horizon}",
-    ]:
+    ):
         if candidate.exists():
             return candidate
-    # 默认新版
-    return SAMPLES_DIR / f"h{horizon}_lb{lookback or 16}_wrf_{wrf_version or 'full'}"
+    return new_dir
 
 
 def load_samples(horizon: str) -> dict:
-    """加载样本数据，自动适配新版/旧版目录命名。"""
+    """加载样本数据。"""
     h_int = int(horizon.lstrip("h"))
     base = _sample_dir(h_int)
     return {
@@ -131,26 +120,23 @@ def load_samples(horizon: str) -> dict:
     }
 
 
-def load_sample_dir(horizon: int) -> Path:
-    """返回样本目录（新版优先）。"""
-    return _sample_dir(horizon)
+def load_sample_dir(horizon: int, lookback: int | None = None) -> Path:
+    """返回样本目录。"""
+    return _sample_dir(horizon, lookback)
 
 
 def load_test_timestamps(horizon: str) -> pd.Series:
-    return pd.read_csv(SAMPLES_DIR / horizon / "test_timestamps.csv", parse_dates=["timestamp"])["timestamp"]
-
-
-def load_y_scaler_from_json(horizon: str, lookback: int = None, wrf_version: str = None):
-    """从 JSON 参数文件重建 y 的 StandardScaler。
-
-    Args:
-        horizon: horizon 字符串如 "h1" 或 horizon 整数
-        lookback: 回看步数（用于新版目录命名）
-        wrf_version: WRF 版本（用于新版目录命名）
-    """
-    from sklearn.preprocessing import StandardScaler
     h_int = int(str(horizon).lstrip("h"))
-    base = _sample_dir(h_int, lookback, wrf_version)
+    base = _sample_dir(h_int)
+    return pd.read_csv(base / "test_timestamps.csv", parse_dates=["timestamp"])["timestamp"]
+
+
+def load_y_scaler_from_json(horizon: str, lookback: int | None = None):
+    """从 JSON 参数文件重建 y 的 StandardScaler。"""
+    from sklearn.preprocessing import StandardScaler
+
+    h_int = int(str(horizon).lstrip("h"))
+    base = _sample_dir(h_int, lookback)
     params = json.loads((base / "scaler_params.json").read_text(encoding="utf-8"))
     scaler = StandardScaler()
     n_y = len(params["y_mean"])

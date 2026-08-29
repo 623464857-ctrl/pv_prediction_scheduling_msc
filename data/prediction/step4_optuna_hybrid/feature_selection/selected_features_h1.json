@@ -1,0 +1,69 @@
+{
+  "timestamp": "2026-08-30T01:15:38+08:00",
+  "horizon": 1,
+  "target_mode": "residual",
+  "method": "pearson_correlation",
+  "correlation_threshold": 0.05,
+  "original_features": [
+    "power_ramp_15m_pu",
+    "total_irradiance_wm2",
+    "direct_normal_irradiance_wm2",
+    "global_horizontal_irradiance_wm2",
+    "air_temperature_c",
+    "atmosphere_hpa",
+    "relative_humidity_pct",
+    "daylight_flag",
+    "sin_hour",
+    "cos_hour",
+    "sin_dayofyear",
+    "cos_dayofyear",
+    "data_quality_score"
+  ],
+  "selected_features": [
+    "relative_humidity_pct",
+    "daylight_flag",
+    "sin_hour",
+    "cos_hour",
+    "sin_dayofyear",
+    "cos_dayofyear"
+  ],
+  "removed_features": [
+    "power_ramp_15m_pu",
+    "total_irradiance_wm2",
+    "direct_normal_irradiance_wm2",
+    "global_horizontal_irradiance_wm2",
+    "air_temperature_c",
+    "atmosphere_hpa",
+    "data_quality_score"
+  ],
+  "correlation_dict": {
+    "power_ramp_15m_pu": -0.071116,
+    "total_irradiance_wm2": -0.091956,
+    "direct_normal_irradiance_wm2": -0.03585,
+    "global_horizontal_irradiance_wm2": -0.035856,
+    "air_temperature_c": -0.045124,
+    "atmosphere_hpa": 0.006684,
+    "relative_humidity_pct": 0.090407,
+    "daylight_flag": -0.014536,
+    "sin_hour": 0.211429,
+    "cos_hour": 0.009228,
+    "sin_dayofyear": 1.9e-05,
+    "cos_dayofyear": -4.6e-05,
+    "data_quality_score": -0.011976
+  },
+  "decisions": {
+    "power_ramp_15m_pu": "剔除 (负相关)",
+    "total_irradiance_wm2": "剔除 (负相关)",
+    "direct_normal_irradiance_wm2": "剔除 (|r| <= 0.05)",
+    "global_horizontal_irradiance_wm2": "剔除 (|r| <= 0.05)",
+    "air_temperature_c": "剔除 (|r| <= 0.05)",
+    "atmosphere_hpa": "剔除 (|r| <= 0.05)",
+    "relative_humidity_pct": "保留",
+    "daylight_flag": "强制保留",
+    "sin_hour": "强制保留",
+    "cos_hour": "强制保留",
+    "sin_dayofyear": "强制保留",
+    "cos_dayofyear": "强制保留",
+    "data_quality_score": "剔除 (|r| <= 0.05)"
+  }
+}

@@ -1,0 +1,16 @@
+EXP-P04 Pipeline Check Report
+horizons=[1]
+
+[  PASS] [h1] 流水线审计日志: logs\prediction\step4_optuna_hybrid\PIPELINE_AUDIT_h1.log
+[  PASS] [h1] Step1 样本构造 状态: status=success
+[  PASS] [h1] Step1 样本构造 运行日志: EXP-P04_h1_lb16_prepare_samples.log (1.6 KB)
+[  PASS] [h1] Step1 样本构造 产出: data\prediction\step4_optuna_hybrid\samples\h1_lb16\meta.json
+[  PASS] [h1] Step1 样本构造 产出: data\prediction\step4_optuna_hybrid\samples\h1_lb16\X_train_seq.npy
+[  PASS] [h1] Step1 样本构造 meta.json: data\prediction\step4_optuna_hybrid\samples\h1_lb16
+[  WARN] [h1] Step2 混合搜索 审计记录: 缺失 audit/h1/optuna.json
+[  WARN] [h1] Step3 最终训练 审计记录: 缺失 audit/h1/train_final.json
+[  WARN] [h1] Step4 多Seed复现 审计记录: 缺失 audit/h1/reproduce.json
+[  WARN] [h1] Step5 报告生成 审计记录: 缺失 audit/h1/report.json
+[  PASS] [h1] 样本目录可解析: data\prediction\step4_optuna_hybrid\samples\h1_lb16
+
+Total checks: 11  FAIL/WARN: 4
