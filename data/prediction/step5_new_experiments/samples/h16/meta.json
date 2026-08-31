@@ -35,5 +35,5 @@
   "n_train": 49089,
   "n_val": 10520,
   "n_test": 10520,
-  "source_csv": "data\\prediction\\step1_preprocessing\\processed\\stations\\Site_1_preprocessed.csv"
+  "source_csv": "data\\prediction\\step1_preprocessing\\processed\\stations\\Site_4_preprocessed.csv"
 }

@@ -34,8 +34,8 @@ STEP4_ROOT = PROJECT_ROOT / "data" / "prediction" / "step4_optuna_hybrid"
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from experiments.prediction.step4_optuna_hybrid.exp_p04_common import (
-    SAMPLES_DIR, MODELS_DIR, METRICS_DIR, PRED_DIR, FIGURES_DIR, REPORTS_DIR,
-    LOG_DIR, CONFIG_DIR, load_config, MODEL_DISPLAY_NAMES, MODEL_ORDER,
+    MODELS_DIR, METRICS_DIR, PRED_DIR, FIGURES_DIR, REPORTS_DIR,
+    LOG_DIR, CONFIG_DIR, load_config, load_sample_dir, MODEL_DISPLAY_NAMES, MODEL_ORDER,
     compute_all_metrics,
 )
 
@@ -66,6 +66,10 @@ def _load_json(path: Path) -> dict:
         return json.load(f)
 
 
+def _sample_base(horizon: str) -> Path:
+    return load_sample_dir(int(horizon.lstrip("h")))
+
+
 # ---------------------------------------------------------------------------
 # CHECK 1: 文件完整性
 # ---------------------------------------------------------------------------
@@ -80,7 +84,7 @@ def check_files(horizon: str) -> None:
               "y_anchor_train.npy", "y_anchor_val.npy", "y_anchor_test.npy",
               "y_residual_train_raw.npy", "y_residual_val_raw.npy", "y_residual_test_raw.npy",
               "test_timestamps.csv", "scaler_params.json", "meta.json"):
-        files.append((SAMPLES_DIR / hs / f, f"SAMPLES / {f}"))
+        files.append((_sample_base(hs) / f, f"SAMPLES / {f}"))
 
     # Models & predictions
     for model in MODEL_ORDER:  # cnn_bilstm
@@ -126,7 +130,7 @@ def check_files(horizon: str) -> None:
 def check_data_integrity(horizon: str) -> None:
     """检查样本数据的 shape、NaN、Inf 和合理范围。"""
     hs = horizon
-    base = SAMPLES_DIR / hs
+    base = _sample_base(hs)
 
     # Shape check
     try:
@@ -205,7 +209,7 @@ def check_data_integrity(horizon: str) -> None:
 def check_timeline(horizon: str) -> None:
     """检查 train/val/test 时间戳严格递增，无时间重叠。"""
     hs = horizon
-    ts_path = SAMPLES_DIR / hs / "test_timestamps.csv"
+    ts_path = _sample_base(hs) / "test_timestamps.csv"
     if not ts_path.exists():
         _check("时间戳文件", hs, False, "文件不存在")
         return
@@ -237,7 +241,7 @@ def check_timeline(horizon: str) -> None:
 def check_scaler(horizon: str) -> None:
     """检查 scaler 参数合理性（y 已标准化；用 scaler 反标准化后应落入 [0,1]）。"""
     hs = horizon
-    base = SAMPLES_DIR / hs
+    base = _sample_base(hs)
     sp_path = base / "scaler_params.json"
     if not sp_path.exists():
         _check("scaler_params.json", hs, False, "不存在")
@@ -342,7 +346,7 @@ def check_metrics_recompute(horizon: str) -> None:
             if rep_val is None or comp_val is None:
                 continue
             diff = abs(rep_val - comp_val)
-            # Thresholds are lenient because reported=mean of 3 seeds, computed=seed42 only.
+            # Thresholds are lenient because reported=mean of all seeds, computed=seed42 only.
             # Different test-set boundaries per seed make exact match impossible.
             warn_threshold = {"MAE": 0.01, "RMSE": 0.015, "R2": 0.05}[metric]
             passed = diff < warn_threshold
@@ -522,7 +526,7 @@ def check_cross_horizon() -> None:
     n_samples = {}
 
     for hs in horizons:
-        base = SAMPLES_DIR / hs
+        base = _sample_base(hs)
         if not base.exists():
             continue
         try:

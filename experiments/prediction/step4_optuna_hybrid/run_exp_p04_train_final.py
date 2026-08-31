@@ -20,14 +20,20 @@ from experiments.prediction.step4_optuna_hybrid.exp_p04_common import (
     METRICS_DIR,
     MODELS_DIR,
     PRED_DIR,
+    PROJECT_ROOT,
     SAMPLES_DIR,
     compute_all_metrics,
     compute_metrics_multi_step,
     load_config,
+    load_sample_dir,
     load_y_scaler_from_json,
     save_predictions,
     save_train_history,
     setup_logger,
+)
+from experiments.prediction.step4_optuna_hybrid.exp_p04_step_audit import (
+    record_step_failure,
+    record_step_result,
 )
 from experiments.prediction.step4_optuna_hybrid.exp_p04_models import build_model
 from experiments.prediction.step4_optuna_hybrid.exp_p04_torch_utils import (
@@ -161,7 +167,7 @@ def train_and_evaluate(model_name: str, params: dict, horizon: int, logger, devi
 
 def run_all_models(horizon: int, horizon_cfg: dict, base_cfg: dict, logger):
     """加载样本 + 加载最优参数 + 训练 + 保存模型和指标。"""
-    hdir = SAMPLES_DIR / f"h{horizon}"
+    hdir = load_sample_dir(horizon)
     metrics_h = METRICS_DIR / f"h{horizon}"
     models_h = MODELS_DIR / f"h{horizon}"
     pred_h = PRED_DIR / f"h{horizon}"
@@ -256,6 +262,7 @@ def main():
     parser.add_argument("--horizon", type=int, choices=[1, 4, 16], required=True)
     args = parser.parse_args()
 
+    t0 = time.time()
     horizon = args.horizon
     horizon_cfg = load_config(f"exp_p04_h{horizon}.json")
     base_cfg = load_config("exp_p04_base.json")
@@ -265,8 +272,38 @@ def main():
     logger.info("=" * 60)
     logger.info("EXP-P04 最终训练  horizon=%d", horizon)
 
-    run_all_models(horizon, horizon_cfg, base_cfg, logger)
+    results = run_all_models(horizon, horizon_cfg, base_cfg, logger)
+    elapsed = time.time() - t0
+    hs = f"h{horizon}"
+
+    if "cnn_bilstm" not in results:
+        raise RuntimeError("cnn_bilstm 最终训练未成功")
+
+    m = results["cnn_bilstm"]
+    summary = {
+        "models_trained": list(results.keys()),
+        "test_RMSE": round(m["RMSE"], 4),
+        "test_MAE": round(m["MAE"], 4),
+        "test_R2": round(m["R2"], 4),
+        "training_time_sec": m.get("training_time_sec"),
+        "elapsed_sec": round(elapsed, 1),
+    }
+    artifacts = [
+        f"data/prediction/step4_optuna_hybrid/models/{hs}/cnn_bilstm_final.pt",
+        f"data/prediction/step4_optuna_hybrid/metrics/{hs}/cnn_bilstm_test_metrics.json",
+        f"data/prediction/step4_optuna_hybrid/predictions/{hs}/cnn_bilstm_test.csv",
+    ]
+    record_step_result(
+        horizon, "train_final", "success", log_file,
+        summary=summary, duration_sec=elapsed, artifacts=artifacts,
+    )
+    return horizon, log_file
 
 
 if __name__ == "__main__":
-    main()
+    t0 = time.time()
+    try:
+        main()
+    except Exception as e:
+        record_step_failure("train_final", t0, e)
+        raise

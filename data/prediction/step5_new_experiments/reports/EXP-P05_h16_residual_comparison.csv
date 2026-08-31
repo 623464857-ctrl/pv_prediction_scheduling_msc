@@ -1,6 +1,0 @@
-Model,Horizon,RMSE ↓ (residual),MAE ↓ (residual)
-LSTM,4h,0.0818,0.0361
-BiLSTM,4h,0.0834,0.0376
-CNN-LSTM,4h,0.0822,0.0380
-CNN-BiLSTM,4h,0.0857,0.0395
-PatchTST,4h,0.0818,0.0379

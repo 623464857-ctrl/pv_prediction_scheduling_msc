@@ -11,7 +11,12 @@ from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+
+# 优先使用中文字体（Windows），缺失时回退 DejaVu Sans
+plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei", "DejaVu Sans"]
+plt.rcParams["axes.unicode_minus"] = False
 import numpy as np
 import pandas as pd
 
@@ -24,15 +29,20 @@ from experiments.prediction.step4_optuna_hybrid.exp_p04_common import (
     MODEL_DISPLAY_NAMES,
     MODEL_ORDER,
     PRED_DIR,
+    PROJECT_ROOT,
     REPORTS_DIR,
-    SAMPLES_DIR,
     load_config,
+    load_sample_dir,
     plot_loss_curve,
     plot_metrics_bar,
     plot_overlay,
     plot_pred_curve,
     plot_training_time_comparison,
     setup_logger,
+)
+from experiments.prediction.step4_optuna_hybrid.exp_p04_step_audit import (
+    record_step_failure,
+    record_step_result,
 )
 
 
@@ -76,20 +86,6 @@ def _load_optuna(horizon: str, model: str) -> dict | None:
     return None
 
 
-def _load_old_afsa() -> dict | None:
-    csv_path = PROJECT_ROOT / "data/prediction/step3_hybrid_models/metrics/afsa_patchtst_metrics.csv"
-    if csv_path.exists():
-        df = pd.read_csv(csv_path)
-        row = df.iloc[0]
-        return {
-            "MAE": row["MAE"],
-            "RMSE": row["RMSE"],
-            "MAPE": row["MAPE"],
-            "R2": row["R2"],
-        }
-    return None
-
-
 def _rank_key(m: dict) -> tuple:
     """Ranking: RMSE (primary, lower better) > MAE (secondary) > R2 (tertiary, higher better)."""
     return (
@@ -114,6 +110,8 @@ def _summary_table(metrics_list: list[dict], horizon_label: str) -> pd.DataFrame
         }
         rows.append(row)
     df = pd.DataFrame(rows)
+    if df.empty:
+        return df
 
     # Add rank column: sort by RMSE primary > MAE secondary > R2 tertiary
     sorted_metrics = sorted(metrics_list, key=_rank_key)
@@ -132,6 +130,111 @@ def _build_metrics_list(horizon: str, all_models: list[str]) -> list[dict]:
         if rep:
             metrics_list.append(rep)
     return metrics_list
+
+
+def _load_horizon_pred_df(horizon: int, model_name: str) -> pd.DataFrame | None:
+    """加载某 horizon 的测试集预测，多步预测仅保留第 1 步（与 H1 对齐）。"""
+    hs = f"h{horizon}"
+    for fname in (f"{model_name}_seed42_test.csv", f"{model_name}_test.csv"):
+        path = PRED_DIR / hs / fname
+        if path.exists():
+            df = pd.read_csv(path, parse_dates=["timestamp"])
+            if horizon > 1:
+                df = df.iloc[0::horizon].reset_index(drop=True)
+            return df
+    return None
+
+
+def _time_axis_locator(t0: pd.Timestamp, t1: pd.Timestamp) -> mdates.HourLocator:
+    """按时间跨度选择合适的刻度间隔。"""
+    span_hours = (t1 - t0).total_seconds() / 3600
+    if span_hours <= 48:
+        interval = 6
+    elif span_hours <= 120:
+        interval = 12
+    else:
+        interval = 24
+    return mdates.HourLocator(interval=interval)
+
+
+def _plot_predictions_all_horizons(
+    model_name: str,
+    n_points: int,
+    logger,
+) -> Path | None:
+    """H1/H4/H16 同图展示：一行一个 horizon，共用同一时间窗口。"""
+    horizon_specs = [
+        (1, "H1 (15min)"),
+        (4, "H4 (1h)"),
+        (16, "H16 (4h)"),
+    ]
+    pred_colors = {1: "#1f77b4", 4: "#ff7f0e", 16: "#2ca02c"}
+
+    loaded: dict[int, pd.DataFrame] = {}
+    for h_int, _ in horizon_specs:
+        df = _load_horizon_pred_df(h_int, model_name)
+        if df is None or df.empty:
+            logger.warning("缺少 h%d 预测文件，跳过跨 horizon 预测曲线", h_int)
+            return None
+        loaded[h_int] = df
+
+    n = min(n_points, *(len(loaded[h]) for h in loaded))
+    ref_ts = loaded[1]["timestamp"].iloc[:n]
+    t0 = pd.Timestamp(ref_ts.iloc[0])
+    t1 = pd.Timestamp(ref_ts.iloc[-1])
+    t0_str = t0.strftime("%Y-%m-%d %H:%M")
+    t1_str = t1.strftime("%Y-%m-%d %H:%M")
+    duration_str = str(t1 - t0).split(".")[0]
+
+    fig, axes = plt.subplots(3, 1, figsize=(14, 10), sharex=True)
+    for ax, (h_int, label) in zip(axes, horizon_specs):
+        sub = loaded[h_int].iloc[:n].copy()
+        sub["timestamp"] = pd.to_datetime(ref_ts.values)
+
+        ax.plot(
+            sub["timestamp"], sub["y_true"],
+            color="black", linewidth=1.5, linestyle="-", label="Actual",
+        )
+        ax.plot(
+            sub["timestamp"], sub["y_pred"],
+            color=pred_colors[h_int], linewidth=1.2, linestyle="--", label="Predicted",
+        )
+        ax.set_ylabel("power_pu")
+        ax.set_title(label)
+        ax.legend(loc="upper right")
+        ax.grid(True, alpha=0.3)
+        ax.set_xlim(t0, t1)
+
+    locator = _time_axis_locator(t0, t1)
+    formatter = mdates.DateFormatter("%m-%d %H:%M")
+    for ax in axes:
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_major_formatter(formatter)
+        ax.tick_params(axis="x", rotation=30)
+
+    # 均匀刻度，强制包含起止时间
+    n_ticks = min(9, n)
+    tick_idx = np.unique(np.round(np.linspace(0, n - 1, n_ticks)).astype(int))
+    tick_times = pd.to_datetime(ref_ts.iloc[tick_idx].values)
+    tick_labels = [pd.Timestamp(t).strftime("%m-%d\n%H:%M") for t in tick_times]
+    for ax in axes:
+        ax.set_xticks(tick_times)
+        ax.set_xticklabels(tick_labels)
+
+    axes[-1].set_xlabel(
+        f"选用时间范围：{t0_str}  →  {t1_str}  "
+        f"（时长 {duration_str}，共 {n} 个 15min 采样点）",
+        fontsize=11,
+    )
+    fig.suptitle("Test Set Predictions — H1 / H4 / H16", y=1.01, fontsize=13)
+    plt.tight_layout()
+
+    out = FIGURES_DIR / "predictions_h1_h4_h16_combined.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    logger.info("已保存跨 horizon 预测曲线: %s", out.name)
+    return out
 
 
 def _plot_comparison_horizons(base_cfg: dict, logger):
@@ -184,10 +287,9 @@ def _gen_markdown_report(horizon: int, horizon_label: str, all_models: list[str]
 
     metrics_list = _build_metrics_list(hs, all_models)
     df_summary = _summary_table(metrics_list, horizon_label)
-    old_afsa = _load_old_afsa()
 
     # 基本信息
-    hdir = SAMPLES_DIR / hs
+    hdir = load_sample_dir(horizon)
     meta = json.loads((hdir / "meta.json").read_text(encoding="utf-8"))
     base_cfg = load_config("exp_p04_base.json")
 
@@ -259,20 +361,8 @@ def _gen_markdown_report(horizon: int, horizon_label: str, all_models: list[str]
     else:
         lines.append("*无复现结果*\n\n")
 
-    # 5. 旧 AFSA-PatchTST 对比
-    lines.append("## 5. 与旧 AFSA-PatchTST 对比\n\n")
-    if old_afsa:
-        lines.append("| 指标 | 旧 AFSA-PatchTST |\n|---|---|\n")
-        lines.append(f"| MAE | {old_afsa.get('MAE', 'N/A'):.4f} |\n")
-        lines.append(f"| RMSE | {old_afsa.get('RMSE', 'N/A'):.4f} |\n")
-        lines.append(f"| MAPE(%) | {old_afsa.get('MAPE', 'N/A'):.2f} |\n")
-        lines.append(f"| R² | {old_afsa.get('R2', 'N/A'):.4f} |\n")
-        lines.append(f"\n*注：旧 AFSA-PatchTST 为 horizon=1 的结果。*\n\n")
-    else:
-        lines.append("*旧模型结果未找到*\n\n")
-
-    # 6. 关键发现
-    lines.append("## 6. 关键发现\n\n")
+    # 5. 关键发现
+    lines.append("## 5. 关键发现\n\n")
     if metrics_list:
         sorted_metrics = sorted(metrics_list, key=_rank_key)
         best = sorted_metrics[0]
@@ -283,23 +373,20 @@ def _gen_markdown_report(horizon: int, horizon_label: str, all_models: list[str]
                     f"R²={best['mean'].get('R2', 0):.4f})\n")
         lines.append(f"- **最差模型**: {MODEL_DISPLAY_NAMES.get(worst['model'], worst['model'])} "
                     f"(RMSE={worst['mean'].get('RMSE', 0):.4f})\n")
-
-        if old_afsa:
-            old_rmse = old_afsa.get("RMSE", float("inf"))
-            best_rmse = best["mean"].get("RMSE", float("inf"))
-            improvement = (old_rmse - best_rmse) / old_rmse * 100 if old_rmse else 0
-            if improvement > 0:
-                lines.append(f"- **相对旧 AFSA 提升**: RMSE 降低 {improvement:.1f}%\n")
-            else:
-                lines.append(f"- **相对旧 AFSA**: RMSE 差 {abs(improvement):.1f}%\n")
-
         lines.append("\n")
     else:
         lines.append("*等待实验完成*\n\n")
 
-    # 7. 图表
-    lines.append("## 7. 可视化\n\n")
-    lines.append("### 7.1 指标对比\n\n")
+    # 6. 图表
+    lines.append("## 6. 可视化\n\n")
+    lines.append("### 6.1 跨 Horizon 预测曲线（H1/H4/H16）\n\n")
+    fig_cross = FIGURES_DIR / "predictions_h1_h4_h16_combined.png"
+    if fig_cross.exists():
+        rel_cross = fig_cross.relative_to(PROJECT_ROOT)
+        lines.append(f"![跨Horizon预测曲线]({rel_cross})\n\n")
+        lines.append("*真实值：黑色实线；预测值：彩色虚线（H1 蓝 / H4 橙 / H16 绿）。三行子图共用同一时间窗口，x 轴标注起止时间与采样点数。*\n\n")
+
+    lines.append("### 6.2 指标对比\n\n")
     fig_combined = FIGURES_DIR / hs / f"h{horizon}_metrics_comparison.png"
     fig_time = FIGURES_DIR / hs / "training_time.png"
     fig_overlay = FIGURES_DIR / hs / "predictions_overlay.png"
@@ -317,7 +404,7 @@ def _gen_markdown_report(horizon: int, horizon_label: str, all_models: list[str]
 def generate_figures(horizon: int, horizon_label: str, all_models: list[str], logger):
     """生成所有图表。"""
     hs = f"h{horizon}"
-    hdir = SAMPLES_DIR / hs
+    hdir = load_sample_dir(horizon)
     fig_h = FIGURES_DIR / hs
     fig_h.mkdir(parents=True, exist_ok=True)
 
@@ -416,7 +503,7 @@ def generate_figures(horizon: int, horizon_label: str, all_models: list[str], lo
     logger.info("图表生成完成")
 
 
-def run_report(horizon: int, logger):
+def run_report(horizon: int, logger, n_points: int = 500):
     horizon_cfg = load_config(f"exp_p04_h{horizon}.json")
     horizon_label = horizon_cfg["horizon_label"]
     hs = f"h{horizon}"
@@ -429,24 +516,27 @@ def run_report(horizon: int, logger):
     # 生成图表
     generate_figures(horizon, horizon_label, all_models, logger)
 
+    # 跨 horizon 预测曲线 + 指标对比（h1/h4/h16 预测文件齐全时生成）
+    _plot_predictions_all_horizons("cnn_bilstm", n_points, logger)
+    _plot_comparison_horizons(load_config("exp_p04_base.json"), logger)
+
     # 生成 Markdown
     md_text = _gen_markdown_report(horizon, horizon_label, all_models, logger)
     report_path = REPORTS_DIR / f"EXP-P04_h{horizon}_详细实验汇报.md"
     report_path.write_text(md_text, encoding="utf-8")
     logger.info("报告已保存: %s", report_path.relative_to(PROJECT_ROOT))
-
-    # 跨 horizon 对比图（只在 horizon=16 时做一次）
-    if horizon == 16:
-        _plot_comparison_horizons(load_config("exp_p04_base.json"), logger)
-
     logger.info("报告生成完成！")
+    return report_path
 
 
 def main():
     parser = argparse.ArgumentParser(description="EXP-P04 报告生成")
     parser.add_argument("--horizon", type=int, choices=[1, 4, 16], required=True)
+    parser.add_argument("--n-points", type=int, default=500,
+                        help="跨 horizon 预测曲线的时间窗口长度（样本点数）")
     args = parser.parse_args()
 
+    t0 = time.time()
     horizon = args.horizon
     horizon_cfg = load_config(f"exp_p04_h{horizon}.json")
     log_file = horizon_cfg["log_file"].replace(".log", "_report.log")
@@ -454,8 +544,33 @@ def main():
     logger.info("=" * 60)
     logger.info("EXP-P04 报告生成  horizon=%d", horizon)
 
-    run_report(horizon, logger)
+    report_path = run_report(horizon, logger, n_points=args.n_points)
+    elapsed = time.time() - t0
+    hs = f"h{horizon}"
+    combined_fig = FIGURES_DIR / hs / "predictions_h1_h4_h16_combined.png"
+    artifacts = [
+        str(report_path.relative_to(PROJECT_ROOT)),
+    ]
+    if combined_fig.exists():
+        artifacts.append(str(combined_fig.relative_to(PROJECT_ROOT)))
+
+    record_step_result(
+        horizon, "report", "success", log_file,
+        summary={
+            "report_file": str(report_path.relative_to(PROJECT_ROOT)),
+            "n_points": args.n_points,
+            "elapsed_sec": round(elapsed, 1),
+        },
+        duration_sec=elapsed,
+        artifacts=artifacts,
+    )
+    return horizon, log_file
 
 
 if __name__ == "__main__":
-    main()
+    t0 = time.time()
+    try:
+        main()
+    except Exception as e:
+        record_step_failure("report", t0, e)
+        raise
