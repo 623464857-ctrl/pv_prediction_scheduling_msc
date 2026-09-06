@@ -1,0 +1,12 @@
+site_key,feature,median,scale,scale_method
+Mingyuehu,power_kw,,1.0,unit
+Mingyuehu,ghi,,1.0,unit
+Mingyuehu,dhi,,1.0,unit
+Mingyuehu,temperature_c,,1.0,unit
+Mingyuehu,relative_humidity_pct,,1.0,unit
+Mingyuehu,wind_gust_ms,,1.0,unit
+Mingyuehu,solar_altitude_deg,,1.0,unit
+Mingyuehu,uv,,1.0,unit
+Mingyuehu,power_pu,,1.0,unit
+Mingyuehu,power_ramp_15m_kw,,1.0,unit
+Mingyuehu,power_ramp_15m_pu,,1.0,unit

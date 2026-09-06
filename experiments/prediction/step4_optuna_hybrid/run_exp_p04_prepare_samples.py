@@ -27,21 +27,144 @@ from experiments.prediction.step4_optuna_hybrid.exp_p04_step_audit import (
     record_step_result,
 )
 
+# =============================================================================
+# 功率历史特征配置
+# =============================================================================
+# 电站容量 (MW) - 用于计算归一化功率
+CAPACITY_MW = None  # 动态从数据中获取
+
+# 滞后特征列表 (历史时刻数)
+POWER_LAG_COLS = [
+    "power_pu_lag_0",   # t-0 (当前时刻)
+    "power_pu_lag_1",   # t-1 (15分钟前)
+    "power_pu_lag_2",   # t-2 (30分钟前)
+    "power_pu_lag_4",   # t-4 (1小时前)
+    "power_pu_lag_8",   # t-8 (2小时前)
+    "power_pu_lag_16",  # t-16 (4小时前)
+]
+
+# 多尺度Ramp特征列表
+POWER_RAMP_COLS = [
+    "power_ramp_15m_pu",  # 15分钟变化率
+    "power_ramp_60m_pu",  # 60分钟变化率
+    "power_ramp_120m_pu", # 120分钟变化率
+]
+
+# 滚动统计特征列表
+POWER_ROLL_COLS = [
+    "power_pu_roll_1h_mean",   # 1小时滚动均值
+    "power_pu_roll_1h_std",    # 1小时滚动标准差
+    "power_pu_roll_2h_mean",   # 2小时滚动均值
+    "power_pu_roll_2h_std",    # 2小时滚动标准差
+    "power_pu_roll_2h_max",    # 2小时滚动最大值
+    "power_pu_roll_2h_min",    # 2小时滚动最小值
+]
+
+# 模型输入特征列表 (15 + 3 + 3 + 4 + 2 + 1 = 28个)
+# 功率历史(15) + 辐照(3) + 气象(3) + 时间(4) + 状态(2) + 质量(1)
 FEATURE_COLUMNS = [
+    # === 功率历史特征 (15个) ===
+    # 滞后特征
+    "power_pu_lag_0",
+    "power_pu_lag_1",
+    "power_pu_lag_2",
+    "power_pu_lag_4",
+    "power_pu_lag_8",
+    "power_pu_lag_16",
+    # 多尺度Ramp
     "power_ramp_15m_pu",
+    "power_ramp_60m_pu",
+    "power_ramp_120m_pu",
+    # 滚动统计
+    "power_pu_roll_1h_mean",
+    "power_pu_roll_1h_std",
+    "power_pu_roll_2h_mean",
+    "power_pu_roll_2h_std",
+    "power_pu_roll_2h_max",
+    "power_pu_roll_2h_min",
+
+    # === 辐照特征 (3个) ===
     "total_irradiance_wm2",
     "direct_normal_irradiance_wm2",
     "global_horizontal_irradiance_wm2",
+
+    # === 气象特征 (3个) ===
     "air_temperature_c",
     "atmosphere_hpa",
     "relative_humidity_pct",
-    "daylight_flag",
-    "sin_hour",
-    "cos_hour",
+
+    # === 时间特征 (4个) ===
+    "hour_sin",
+    "hour_cos",
     "sin_dayofyear",
     "cos_dayofyear",
+
+    # === 状态标志 (2个) ===
+    "is_peak_hour",    # 峰值时段标志(11:00-14:00)
+    "daylight_flag",   # 日间标志(GTI > 5 W/m² 为白天)
+
+    # === 质量评分 (1个) ===
     "data_quality_score",
 ]
+
+
+def compute_power_features(df: pd.DataFrame) -> pd.DataFrame:
+    """计算功率相关特征：滞后、ramp、滚动统计
+
+    所有特征只使用当前时刻及历史时刻，无未来泄漏。
+    """
+    df = df.copy()
+    capacity = df["capacity_mw"].iloc[0] if "capacity_mw" in df.columns else 50.0
+
+    # -------------------------------------------------------------------------
+    # 1. 基础功率归一化
+    # -------------------------------------------------------------------------
+    if "power_pu" not in df.columns:
+        df["power_pu"] = df["power_mw"] / capacity
+
+    # -------------------------------------------------------------------------
+    # 2. 滞后特征 (只使用历史值，无未来泄漏)
+    # -------------------------------------------------------------------------
+    lag_steps = [0, 1, 2, 4, 8, 16]
+    for lag in lag_steps:
+        col_name = f"power_pu_lag_{lag}"
+        if lag == 0:
+            df[col_name] = df["power_pu"]
+        else:
+            df[col_name] = df["power_pu"].shift(lag)
+
+    # -------------------------------------------------------------------------
+    # 3. 多尺度Ramp特征 (功率变化率)
+    # -------------------------------------------------------------------------
+    # 15分钟变化率 (1步 = 15分钟)
+    df["power_ramp_15m_pu"] = df["power_pu"].diff(1)
+
+    # 60分钟变化率 (4步 = 60分钟)
+    df["power_ramp_60m_pu"] = df["power_pu"].diff(4)
+
+    # 120分钟变化率 (8步 = 120分钟)
+    df["power_ramp_120m_pu"] = df["power_pu"].diff(8)
+
+    # -------------------------------------------------------------------------
+    # 4. 滚动统计特征
+    # -------------------------------------------------------------------------
+    # 1小时滚动窗口 (4步 = 60分钟)
+    df["power_pu_roll_1h_mean"] = df["power_pu"].shift(1).rolling(window=4, min_periods=1).mean()
+    df["power_pu_roll_1h_std"] = df["power_pu"].shift(1).rolling(window=4, min_periods=1).std()
+
+    # 2小时滚动窗口 (8步 = 120分钟)
+    df["power_pu_roll_2h_mean"] = df["power_pu"].shift(1).rolling(window=8, min_periods=1).mean()
+    df["power_pu_roll_2h_std"] = df["power_pu"].shift(1).rolling(window=8, min_periods=1).std()
+    df["power_pu_roll_2h_max"] = df["power_pu"].shift(1).rolling(window=8, min_periods=1).max()
+    df["power_pu_roll_2h_min"] = df["power_pu"].shift(1).rolling(window=8, min_periods=1).min()
+
+    # -------------------------------------------------------------------------
+    # 5. 日间标志 (基于辐照度阈值)
+    # -------------------------------------------------------------------------
+    # GTI > 5 W/m² 认为处于日间
+    df["daylight_flag"] = (df["total_irradiance_wm2"] > 5).astype(float)
+
+    return df
 
 
 def build_windows(
@@ -108,6 +231,11 @@ def main():
     df = df.sort_values("timestamp").reset_index(drop=True)
     logger.info("原始行数: %d  |  时间范围: %s ~ %s",
                 len(df), df["timestamp"].iloc[0], df["timestamp"].iloc[-1])
+
+    # 计算功率历史特征 (滞后、ramp、滚动统计)
+    logger.info("计算功率历史特征...")
+    df = compute_power_features(df)
+    logger.info("功率特征计算完成，新增 %d 个特征", len(df.columns))
 
     missing = [c for c in FEATURE_COLUMNS if c not in df.columns]
     if missing:

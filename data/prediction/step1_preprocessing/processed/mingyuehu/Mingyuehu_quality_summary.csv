@@ -1,0 +1,2 @@
+site_key,capacity_kw,n_raw_power_rows,n_raw_weather_rows,invalid_timestamp_count,duplicate_timestamp_count,expected_timesteps,time_start,time_end,row_inserted_count,mean_data_quality_score,min_data_quality_score,power_zero_ratio,issue_repair_cell_count
+Mingyuehu,281.6,8064,8064,0,0,8064,2026-06-09,2026-08-31 23:45:00,0,1.0,1.0,0.0,806

@@ -1,0 +1,104 @@
+[INFO] EXP-P01-MYH 启动 | 项目根目录: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new
+[INFO] 加载功率数据: 明月湖光伏发电.csv
+[INFO]   功率数据: 8064 行
+[INFO] 加载天气数据: 明月湖6-8月天气数据.csv
+[INFO]   天气数据: 8064 行, 特征数: 10
+[INFO] 开始预处理...
+[INFO] EXP-P01-MYH 启动 | 项目根目录: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new
+[INFO] 加载功率数据: 明月湖光伏发电.csv
+[INFO]   功率数据: 8064 行
+[INFO] 加载天气数据: 明月湖6-8月天气数据.csv
+[INFO]   天气数据: 8064 行, 特征数: 10
+[INFO] 开始预处理...
+[INFO] 合并后数据: 8064 行
+[INFO] 已保存预处理数据: Mingyuehu_preprocessed.csv
+[INFO] 已保存质量报告: Mingyuehu_quality_summary.csv
+[INFO] 已保存缩放参考: Mingyuehu_scaling_reference.csv
+
+================================================================================
+【实验日志摘要 — EXP-P01-MYH】明月湖光伏电站数据预处理
+
+【1. 本次实验做了什么】
+- 加载明月湖功率数据（2026-06-09 ~ 2026-08-31）
+- 加载明月湖天气数据并合并
+- 15分钟时间轴重建、排序、去重
+- 物理边界清洗、功率非负/容量约束、Hampel 异常检测
+- 短时插值、夜间功率置零、时序剖面长缺失回填
+- 鲁棒标准化、衍生特征、质量评分
+
+【2. 输入与输出】
+功率数据: 明月湖光伏发电.csv
+天气数据: 明月湖6-8月天气数据.csv
+输出: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\data\prediction\step1_preprocessing\processed\mingyuehu
+
+【3. 关键运行统计】
+- 功率数据行数: 8064
+- 天气数据行数: 8064
+- 期望时间步: 8064
+- 插入缺口: 0
+- 均值质量分: 1.0000
+- 最小质量分: 1.0000
+- 功率零值比例: 0.0000
+- 问题修复单元: 806
+
+【4. 产出文件】
+- data\prediction\step1_preprocessing\processed\mingyuehu\Mingyuehu_preprocessed.csv
+- data\prediction\step1_preprocessing\processed\mingyuehu\Mingyuehu_quality_summary.csv
+- data\prediction\step1_preprocessing\processed\mingyuehu\Mingyuehu_scaling_reference.csv
+
+【5. 实验结论】
+- 数据时间范围: 2026-06-09 00:00:00 至 2026-08-31 23:45:00
+- 装机容量: 281.6 kW
+- 数据质量评分: 均值 1.0000
+================================================================================
+[INFO] EXP-P01-MYH 结束 | 日志: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\logs\prediction\step1_data_cleaning_alignment\EXP-P01-MYH.log
+[INFO] EXP-P01-MYH 启动 | 项目根目录: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new
+[INFO] 加载功率数据: 明月湖光伏发电.csv
+[INFO] EXP-P01-MYH 启动 | 项目根目录: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new
+[INFO] 加载功率数据: 明月湖光伏发电.csv
+[INFO]   功率数据: 8064 行, 有效功率数据: 8064 行
+[INFO] 加载天气数据: 明月湖6-8月天气数据.csv
+[INFO]   天气数据: 8064 行, 特征数: 10
+[INFO] 开始预处理...
+[INFO] 合并后数据: 8064 行
+[INFO] 已保存预处理数据: Mingyuehu_preprocessed.csv
+[INFO] 已保存质量报告: Mingyuehu_quality_summary.csv
+[INFO] 已保存缩放参考: Mingyuehu_scaling_reference.csv
+
+================================================================================
+【实验日志摘要 — EXP-P01-MYH】明月湖光伏电站数据预处理
+
+【1. 本次实验做了什么】
+- 加载明月湖功率数据（2026-06-09 ~ 2026-08-31）
+- 加载明月湖天气数据并合并
+- 15分钟时间轴重建、排序、去重
+- 物理边界清洗、功率非负/容量约束、Hampel 异常检测
+- 短时插值、夜间功率置零、时序剖面长缺失回填
+- 鲁棒标准化、衍生特征、质量评分
+
+【2. 输入与输出】
+功率数据: 明月湖光伏发电.csv
+天气数据: 明月湖6-8月天气数据.csv
+输出: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\data\prediction\step1_preprocessing\processed\mingyuehu
+
+【3. 关键运行统计】
+- 功率数据行数: 8064
+- 天气数据行数: 8064
+- 期望时间步: 8064
+- 插入缺口: 0
+- 均值质量分: 1.0000
+- 最小质量分: 1.0000
+- 功率零值比例: 0.0000
+- 问题修复单元: 806
+
+【4. 产出文件】
+- data\prediction\step1_preprocessing\processed\mingyuehu\Mingyuehu_preprocessed.csv
+- data\prediction\step1_preprocessing\processed\mingyuehu\Mingyuehu_quality_summary.csv
+- data\prediction\step1_preprocessing\processed\mingyuehu\Mingyuehu_scaling_reference.csv
+
+【5. 实验结论】
+- 数据时间范围: 2026-06-09 00:00:00 至 2026-08-31 23:45:00
+- 装机容量: 281.6 kW
+- 数据质量评分: 均值 1.0000
+================================================================================
+[INFO] EXP-P01-MYH 结束 | 日志: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\logs\prediction\step1_data_cleaning_alignment\EXP-P01-MYH.log

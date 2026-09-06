@@ -1,0 +1,96 @@
+============================================================
+明月湖数据集 - 数据质量诊断报告
+生成时间: 2026-09-03 21:06:24
+数据时间范围: 2026-06-09 00:00:00 ~ 2026-08-31 23:45:00
+============================================================
+
+【一、数据概览】
+  原始功率文件: 明月湖光伏发电.csv (8064 行 x 2 列)
+  原始天气文件: 明月湖6-8月天气数据.csv (8064 行 x 26 列)
+  合并后文件:   明月湖_merged_raw.csv (8064 行 x 25 列)
+  时间分辨率:   15 分钟
+  装机容量:     281.6 kW
+
+【二、时间连续性】
+  理论行数: 8064, 实际: 8064, 缺失: 0
+  非标准间隔: 0, 重复时间戳: 0
+  结论: 通过
+
+【三、缺失值】
+  数值列缺失: 无
+
+【四、功率数据】
+  负功率记录: 0
+  超容量(>281.6kW): 0 条
+  夜间功率>0: 353 条 (建议Clip为0)
+  白天功率=0(停机): 407 条 (保持原样)
+  功率范围: 0.0000 ~ 268.7300 kW
+  功率均值: 19.6384 kW, 中位数: 0.0400 kW
+
+【五、辐照度数据(GHI/DHI)】
+  DHI > GHI 记录: 49 条 (0.61%)
+  GHI > 1100 W/m2 极值: 0 条
+  GHI 直接分量(GHI-DHI)<-10: 0 条
+  GHI 范围: 0.0 ~ 1051.0 W/m2
+  DHI 范围: 0.0 ~ 126.0 W/m2
+
+【六、辐照-功率一致性】
+  白天正常发电记录: 2539 条
+  转换效率均值: 21.9%, 中位数: 14.6%
+  效率<5%的记录: 883 条
+
+【七、气象特征统计】
+  温度: 22.2 ~ 36.3 °C, 均值: 28.4 °C
+  湿度: 44 ~ 100 %, 均值: 84.7 %
+  气压: 978 ~ 1004 hPa, 均值: 994.0 hPa
+  风速: 0.0 ~ 10.0 m/s, 均值: 2.3 m/s
+  云量: 0 ~ 100 %, 均值: 83.3 %
+  白天时段(6-18时): 4368 条 (54.2%)
+  夜间时段: 3696 条 (45.8%)
+
+【八、天气类型分布】
+  Overcast clouds: 4466 条 (55.4%)
+  Light rain: 631 条 (7.8%)
+  Drizzle: 620 条 (7.7%)
+  Broken clouds: 582 条 (7.2%)
+  Few clouds: 445 条 (5.5%)
+  Scattered clouds: 419 条 (5.2%)
+  Fog: 377 条 (4.7%)
+  Thunderstorm with light rain: 197 条 (2.4%)
+  Moderate rain: 102 条 (1.3%)
+  Clear Sky: 82 条 (1.0%)
+  Thunderstorm with drizzle: 78 条 (1.0%)
+  Thunderstorm with rain: 52 条 (0.6%)
+  Heavy rain: 8 条 (0.1%)
+  Thunderstorm with heavy rain: 5 条 (0.1%)
+
+【九、待处理问题】
+  1. 夜间功率>0 (353条): 建议Clip为0
+  2. DHI>GHI (49条): 超出量极小(最大6 W/m2), 可忽略或Clip DHI<=GHI
+
+【十、合并数据集字段说明】
+  timestamp: 时间戳
+  power_kw: 光伏发电功率 (kW)
+  temperature_c: 温度 (°C)
+  apparent_temperature_c: 体感温度 (°C)
+  relative_humidity_pct: 相对湿度 (%)
+  dew_point_c: 露点温度 (°C)
+  pressure_hpa: 气压 (hPa)
+  wind_speed_ms: 风速 (m/s)
+  wind_dir_deg: 风向 (度)
+  wind_gust_ms: 阵风风速 (m/s)
+  visibility_km: 能见度 (km)
+  cloud_cover_pct: 云量 (%)
+  solar_altitude_deg: 太阳高度角 (度)
+  solar_azimuth_deg: 太阳方位角 (度)
+  ghi: 水平面总辐射 (W/m2)
+  dhi: 水平面散射辐射 (W/m2)
+  solar_radiation_wm2: 太阳辐射强度 (W/m2)
+  uv: 紫外线指数
+  precip_rate_mmhr: 降水率 (mm/h)
+  snow_rate_mmhr: 降雪率 (mm/h)
+  part_of_day: 时段(n=夜间/d=白天)
+  weather_code: 天气代码
+  weather_description: 天气描述
+  weather_icon: 天气图标
+  hour_of_day: 小时(0-23)
