@@ -1,0 +1,140 @@
+[INFO] EXP-P01 明月湖数据预处理启动 | 项目根目录: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new
+[INFO] 加载天气数据: 明月湖6-8月天气数据.csv
+[INFO] 加载功率数据: 明月湖光伏发电.csv
+[INFO] 数据合并完成: 8064 行
+[INFO] 处理 Mingyuehu_1 数据
+[INFO] EXP-P01 明月湖数据预处理启动 | 项目根目录: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new
+[INFO] 加载天气数据: 明月湖6-8月天气数据.csv
+[INFO] 加载功率数据: 明月湖光伏发电.csv
+[INFO] 数据合并完成: 8064 行
+[INFO] 处理 Mingyuehu_1 数据
+[INFO] 已写出 Mingyuehu_1_preprocessed.csv
+
+================================================================================
+【实验日志摘要 — EXP-P01 明月湖】
+
+【1. 本次实验做了什么】
+- 读取明月湖天气数据(Weatherbit API)和功率数据，执行字段统一、15分钟时间轴重建
+- 物理边界清洗、功率非负/容量约束、Hampel异常检测
+- 短时插值、夜间功率置零、时序剖面长缺失回填
+- 白天/夜间分离(基于太阳高度角)、天气特征提取
+- 鲁棒标准化、衍生特征、质量评分
+
+【2. 输入与输出】
+输入: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\data\raw
+输出: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\data\prediction\step1_preprocessing\processed
+
+【3. 关键运行统计】
+- 处理站点数: 1
+- Mingyuehu_1: 行数=8064, 白天占比=54.7%, 均值质量分=0.9806, 修复单元=2140
+
+【4. 产出文件】
+- data\prediction\step1_preprocessing\processed\mingyuehu_long.csv
+- data\prediction\step1_preprocessing\processed\mingyuehu_quality_summary.csv
+- data\prediction\step1_preprocessing\processed\mingyuehu_feature_scaling_reference.csv
+- data\prediction\step1_preprocessing\processed\stations\Mingyuehu_1_preprocessed.csv
+
+【5. 实验结论】
+- 明月湖数据集已对齐至15分钟时间轴
+- 白天/夜间已基于太阳高度角分离，夜间功率已置零
+- 物理越界值和异常值已标记并修复
+================================================================================
+[INFO] EXP-P01 明月湖数据预处理结束 | 日志: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\logs\prediction\step1_data_cleaning_alignment\EXP-P01-mingyuehu.log
+[INFO] EXP-P01 明月湖数据预处理启动 | 项目根目录: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new
+[INFO] 加载天气数据: 明月湖6-8月天气数据.csv
+[INFO] 加载功率数据: 明月湖光伏发电.csv
+[INFO] 数据合并完成: 8064 行
+[INFO] 处理 Mingyuehu_1 数据
+[INFO] [3.9b] 偏态校正开始
+[INFO] [3.9b] 偏态校正完成，共处理 5 个特征
+[INFO] 检测到白天疑似停机记录 380 条 (GHI>5 且功率=0)，已标记为 is_potential_shutdown=1
+[INFO] 已写出 mingyuehu_long.csv
+[INFO] 偏态校正记录已写出: mingyuehu_skew_correction.csv
+[INFO] 已写出 Mingyuehu_1_preprocessed.csv
+
+================================================================================
+【实验日志摘要 — EXP-P01 明月湖】
+
+【1. 本次实验做了什么】
+- 读取明月湖天气数据(Weatherbit API)和功率数据，执行字段统一、15分钟时间轴重建
+- 物理边界清洗、功率非负/容量约束、Hampel异常检测
+- 辐照-功率物理一致性修正（GHI<20 且功率>5%容量 → 异常）
+- 短时插值（≤4步线性）、长缺失剖面回填、低辐照功率置零（GHI≤5）
+- 偏态校正（Yeo-Johnson/log1p/sqrt，从 data_analysis 移植）
+- 白天/夜间分离(基于太阳高度角)、疑似停机标记(is_potential_shutdown)
+- 鲁棒标准化(median/IQR)、调度/预测衍生特征、质量评分
+- 运行时自检验证（从 data_analysis 移植）
+
+【2. 输入与输出】
+输入: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\data\raw
+输出: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\data\prediction\step1_preprocessing\processed
+
+【3. 关键运行统计】
+- 处理站点数: 1
+- Mingyuehu_1: 行数=8064, 白天占比=54.7%, 疑似停机=380条, 均值质量分=0.9806, 修复单元=2140
+
+【4. 产出文件】
+- data\prediction\step1_preprocessing\processed\mingyuehu_long.csv
+- data\prediction\step1_preprocessing\processed\mingyuehu_quality_summary.csv
+- data\prediction\step1_preprocessing\processed\mingyuehu_feature_scaling_reference.csv
+- data\prediction\step1_preprocessing\processed\stations\Mingyuehu_1_preprocessed.csv
+- data\prediction\step1_preprocessing\processed\mingyuehu_skew_correction.csv
+
+【5. 实验结论】
+- 明月湖数据集已对齐至15分钟时间轴
+- 偏态校正（Yeo-Johnson/log1p/sqrt）已完成，分布更接近正态
+- 白天/夜间已基于太阳高度角分离，夜间功率已置零
+- 疑似停机记录已标记（is_potential_shutdown）
+- 物理越界值和异常值已标记并修复
+- 运行时自检验证已通过
+================================================================================
+[INFO] EXP-P01 明月湖数据预处理结束 | 日志: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\logs\prediction\step1_preprocessing\EXP-P01-mingyuehu.log
+[INFO] EXP-P01 明月湖数据预处理启动 | 项目根目录: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new
+[INFO] 加载天气数据: 明月湖6-8月天气数据.csv
+[INFO] 加载功率数据: 明月湖光伏发电.csv
+[INFO] 数据合并完成: 8064 行
+[INFO] 处理 Mingyuehu_1 数据
+[INFO] [3.9b] 偏态校正开始
+[INFO] [3.9b] 偏态校正完成，共处理 4 个特征
+[INFO] 检测到白天疑似停机记录 380 条 (GHI>5 且功率=0)，已标记为 is_potential_shutdown=1
+[INFO] 已写出 mingyuehu_long.csv
+[INFO] 偏态校正记录已写出: mingyuehu_skew_correction.csv
+[INFO] 已写出 Mingyuehu_1_preprocessed.csv
+
+================================================================================
+【实验日志摘要 — EXP-P01 明月湖】
+
+【1. 本次实验做了什么】
+- 读取明月湖天气数据(Weatherbit API)和功率数据，执行字段统一、15分钟时间轴重建
+- 物理边界清洗、功率非负/容量约束、Hampel异常检测
+- 辐照-功率物理一致性修正（GHI<20 且功率>5%容量 → 异常）
+- 短时插值（≤4步线性）、长缺失剖面回填、低辐照功率置零（GHI≤5）
+- 偏态校正（Yeo-Johnson/log1p/sqrt，从 data_analysis 移植）
+- 白天/夜间分离(基于太阳高度角)、疑似停机标记(is_potential_shutdown)
+- 鲁棒标准化(median/IQR)、调度/预测衍生特征、质量评分
+- 运行时自检验证（从 data_analysis 移植）
+
+【2. 输入与输出】
+输入: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\data\raw
+输出: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\data\prediction\step1_preprocessing\processed
+
+【3. 关键运行统计】
+- 处理站点数: 1
+- Mingyuehu_1: 行数=8064, 白天占比=54.7%, 疑似停机=380条, 均值质量分=0.9806, 修复单元=2140
+
+【4. 产出文件】
+- data\prediction\step1_preprocessing\processed\mingyuehu_long.csv
+- data\prediction\step1_preprocessing\processed\mingyuehu_quality_summary.csv
+- data\prediction\step1_preprocessing\processed\mingyuehu_feature_scaling_reference.csv
+- data\prediction\step1_preprocessing\processed\stations\Mingyuehu_1_preprocessed.csv
+- data\prediction\step1_preprocessing\processed\mingyuehu_skew_correction.csv
+
+【5. 实验结论】
+- 明月湖数据集已对齐至15分钟时间轴
+- 偏态校正（Yeo-Johnson/log1p/sqrt）已完成，分布更接近正态
+- 白天/夜间已基于太阳高度角分离，夜间功率已置零
+- 疑似停机记录已标记（is_potential_shutdown）
+- 物理越界值和异常值已标记并修复
+- 运行时自检验证已通过
+================================================================================
+[INFO] EXP-P01 明月湖数据预处理结束 | 日志: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\logs\prediction\step1_preprocessing\EXP-P01-mingyuehu.log

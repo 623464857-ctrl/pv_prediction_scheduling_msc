@@ -1,0 +1,6 @@
+{
+    "horizon": 4,
+    "lookback": 48,
+    "description": "明月湖 h=4 步预测配置 (1小时)",
+    "sample_dir": "mingyuehu_h4_lb48"
+}

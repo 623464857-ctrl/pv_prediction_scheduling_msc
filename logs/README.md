@@ -8,7 +8,7 @@
 logs/{方向}/{实验目录}/EXP-{编号}.log
 ```
 
-示例：`logs/prediction/step1_data_cleaning_alignment/EXP-P01.log`
+示例：`logs/prediction/step1_preprocessing/EXP-P01.log`
 
 ## 日志内容
 

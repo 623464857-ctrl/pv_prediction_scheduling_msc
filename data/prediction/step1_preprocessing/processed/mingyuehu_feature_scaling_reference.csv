@@ -1,0 +1,12 @@
+site_id,site_key,feature,median,scale,scale_method
+1,Mingyuehu_1,temperature_c,27.8,2.900000000000002,iqr
+1,Mingyuehu_1,ghi_wm2,4.9123266868558835,7.6435949072957055,iqr
+1,Mingyuehu_1,dni_wm2,355.0,860.0,iqr
+1,Mingyuehu_1,dhi_wm2,40.0,109.0,iqr
+1,Mingyuehu_1,relative_humidity_pct,88.0,15.0,iqr
+1,Mingyuehu_1,atmosphere_hpa,994.0,4.0,iqr
+1,Mingyuehu_1,wind_speed_ms,2.2,1.6,iqr
+1,Mingyuehu_1,power_kw,0.0,1.7713672449459552,iqr
+1,Mingyuehu_1,power_pu,0.0,0.00035427344898919104,iqr
+1,Mingyuehu_1,power_ramp_15m_kw,0.0,0.001134240557653432,iqr
+1,Mingyuehu_1,power_ramp_15m_pu,0.0,2.2684811153067866e-07,iqr

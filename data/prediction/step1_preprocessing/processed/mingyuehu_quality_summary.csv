@@ -1,0 +1,2 @@
+site_id,site_key,capacity_kw,source_file,n_raw_rows,invalid_timestamp_count,duplicate_timestamp_count,expected_timesteps,time_start,time_end,row_inserted_count,shutdown_candidate_count,mean_data_quality_score,min_data_quality_score,power_zero_ratio,daytime_ratio,issue_repair_cell_count
+1,Mingyuehu_1,5000,明月湖数据集,8064,0,0,8064,2026-06-09,2026-08-31 23:45:00,0,380,0.9805927579365079,0.75,0.5066964285714286,0.5473710317460317,2140
