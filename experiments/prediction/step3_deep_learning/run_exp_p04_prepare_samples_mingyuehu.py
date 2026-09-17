@@ -31,8 +31,8 @@ from experiments.prediction.step5_reporting.exp_p04_step_audit import (
 # 明月湖数据集配置
 # =============================================================================
 # 明月湖电站容量 (kW)
-CAPACITY_KW = 5000.0
-CAPACITY_MW = CAPACITY_KW / 1000.0  # 5 MW
+CAPACITY_KW = 281.6
+CAPACITY_MW = CAPACITY_KW / 1000.0  # 0.2816 MW
 
 # 明月湖数据集路径
 MINGYUEHU_DATA_PATH = "data/prediction/step1_preprocessing/processed/mingyuehu_long.csv"

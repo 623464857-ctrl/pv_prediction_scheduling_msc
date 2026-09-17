@@ -64,11 +64,12 @@ MINGYUEHU_CFG = {
 
 # 样本目录加载器（明月湖专用）
 def load_mingyuehu_sample_dir(horizon: int, lookback: int = None) -> Path:
-    """返回明月湖样本目录"""
+    """返回明月湖样本目录（适配 samples_p06 目录结构）"""
     if lookback is None:
         lookback = MINGYUEHU_CFG["lookback"]
-    from experiments.prediction.step2_hyperparameter_search.exp_p04_common import SAMPLES_DIR
-    return SAMPLES_DIR / f"mingyuehu_h{horizon}_lb{lookback}"
+    from experiments.prediction.step2_hyperparameter_search.exp_p04_common import STEP4_ROOT
+    # 数据在 samples_p06 目录下，命名格式为 h{horizon}_lb{lookback}
+    return STEP4_ROOT / "samples_p06" / f"h{horizon}_lb{lookback}"
 
 
 def load_mingyuehu_y_scaler(horizon: int, lookback: int = None):
@@ -108,7 +109,8 @@ HORIZON_CONFIGS = {
                 "hidden_size": [32, 64, 128],
                 "num_layers": [1, 2, 3],
                 "dropout": [0.1, 0.2, 0.3],
-                "cnn_channels": ["32,64", "64,128"],
+                "cnn_channels_0": [32, 64],
+                "cnn_channels_1": [64, 128],
                 "kernel_size": [3, 5],
             }
         },
@@ -132,7 +134,8 @@ HORIZON_CONFIGS = {
                 "hidden_size": [32, 64, 128],
                 "num_layers": [1, 2, 3],
                 "dropout": [0.1, 0.2, 0.3],
-                "cnn_channels": ["32,64", "64,128"],
+                "cnn_channels_0": [32, 64],
+                "cnn_channels_1": [64, 128],
                 "kernel_size": [3, 5],
             }
         },
@@ -156,7 +159,8 @@ HORIZON_CONFIGS = {
                 "hidden_size": [32, 64, 128],
                 "num_layers": [1, 2, 3],
                 "dropout": [0.1, 0.2, 0.3],
-                "cnn_channels": ["32,64", "64,128"],
+                "cnn_channels_0": [32, 64],
+                "cnn_channels_1": [64, 128],
                 "kernel_size": [3, 5],
             }
         },
@@ -169,8 +173,11 @@ def _convert_params(params: dict, search_space: dict) -> dict:
     for name, space in search_space.items():
         if name in ("lr", "batch_size"):
             continue
+        if name.startswith("cnn_channels_"):
+            # 跳过，单独处理
+            continue
         vals_str = [str(v) for v in space]
-        chosen = str(params.get(name, params[name]))
+        chosen = str(params.get(name, params.get(name)))
         if chosen in vals_str:
             try:
                 out[name] = int(chosen)
@@ -180,7 +187,19 @@ def _convert_params(params: dict, search_space: dict) -> dict:
                 except ValueError:
                     out[name] = chosen
         else:
-            out[name] = params[name]
+            val = params.get(name, params.get(name))
+            if val is not None:
+                out[name] = val
+    
+    # 组合 cnn_channels
+    cnn_0 = params.get("cnn_channels_0", 32)
+    cnn_1 = params.get("cnn_channels_1", 64)
+    if isinstance(cnn_0, str):
+        cnn_0 = int(cnn_0)
+    if isinstance(cnn_1, str):
+        cnn_1 = int(cnn_1)
+    out["cnn_channels"] = [cnn_0, cnn_1]
+    
     return out
 
 
@@ -199,10 +218,9 @@ def run_hybrid_search_for_model(model_name, horizon_cfg, logger):
     logger.info("明月湖 Optuna-AFSA 混合搜索: model=%s horizon=%d", model_name, horizon)
 
     X_train = np.load(hdir / "X_train_seq.npy")
-    y_residual_train = np.load(hdir / "y_train.npy")
+    y_train = np.load(hdir / "y_train.npy")
     X_val = np.load(hdir / "X_val_seq.npy")
-    y_residual_val = np.load(hdir / "y_val.npy")
-    y_anchor_val = np.load(hdir / "y_anchor_val.npy")
+    y_val = np.load(hdir / "y_val.npy")
     _, _, n_features = X_train.shape
     meta = json.loads((hdir / "meta.json").read_text(encoding="utf-8"))
     seq_len = meta["lookback"]
@@ -220,16 +238,16 @@ def run_hybrid_search_for_model(model_name, horizon_cfg, logger):
     n_total = len(X_train)
     tr_end = int(n_total * 2 / 3)
     X_quick = X_train[tr_end:]
-    y_quick_residual = y_residual_train[tr_end:]
+    y_quick = y_train[tr_end:]
     logger.info("快速搜索: fold split at %d quick_train=%d", tr_end, len(X_quick))
 
     ablation, global_best = run_all_strategies(
         model_name=model_name,
         search_space=search_space,
         X_train=X_quick,
-        y_train=y_quick_residual,
+        y_train=y_quick,
         X_val=X_val,
-        y_val=y_residual_val,
+        y_val=y_val,
         X_bench=X_val,
         seq_len=seq_len,
         n_features=n_features,
@@ -265,9 +283,9 @@ def run_hybrid_search_for_model(model_name, horizon_cfg, logger):
             model_name, n_features=n_features, seq_len=seq_len,
             horizon=horizon, **best_params_clean,
         ).to(device)
-        train_loader = make_loader(X_train[tr_idx], y_residual_train[tr_idx],
+        train_loader = make_loader(X_train[tr_idx], y_train[tr_idx],
                                    batch_size=batch_size, shuffle=True)
-        val_loader = make_loader(X_train[va_idx], y_residual_train[va_idx],
+        val_loader = make_loader(X_train[va_idx], y_train[va_idx],
                                  batch_size=batch_size, shuffle=False)
         _, history = train_with_early_stop(
             model, train_loader, val_loader,
@@ -288,19 +306,18 @@ def run_hybrid_search_for_model(model_name, horizon_cfg, logger):
         model_name, n_features=n_features, seq_len=seq_len,
         horizon=horizon, **best_params_clean,
     ).to(device)
-    train_loader = make_loader(X_train[best_va_idx[0]:], y_residual_train[best_va_idx[0]:],
+    train_loader = make_loader(X_train[best_va_idx[0]:], y_train[best_va_idx[0]:],
                                batch_size=batch_size, shuffle=True)
-    val_loader = make_loader(X_train[best_va_idx], y_residual_train[best_va_idx],
+    val_loader = make_loader(X_train[best_va_idx], y_train[best_va_idx],
                              batch_size=batch_size, shuffle=False)
     train_with_early_stop(
         model_final, train_loader, val_loader,
         lr=lr, max_epochs=n_epochs, patience=patience, device=device,
     )
-    y_pred_residual_scaled = predict(model_final, X_val, device)
-    y_pred_residual = y_scaler.inverse_transform(y_pred_residual_scaled)
-    y_true_power = y_anchor_val + y_residual_val
-    y_pred_power = y_anchor_val + y_pred_residual
-    avg_power_metrics = compute_all_metrics(y_true_power.ravel(), y_pred_power.ravel())
+    y_pred_scaled = predict(model_final, X_val, device)
+    y_pred = y_scaler.inverse_transform(y_pred_scaled)
+    y_true = y_scaler.inverse_transform(y_val)
+    avg_power_metrics = compute_all_metrics(y_true.ravel(), y_pred.ravel())
     logger.info("完整验证集功率指标: RMSE=%.4f MAE=%.4f R2=%.4f",
                 avg_power_metrics["RMSE"], avg_power_metrics["MAE"], avg_power_metrics["R2"])
 
@@ -369,7 +386,7 @@ def main():
         str((metrics_h / f"mingyuehu_{args.model}_optuna.json").relative_to(PROJECT_ROOT)),
     ]
     record_step_result(
-        horizon, "optuna_mingyuehu", "success", log_file,
+        horizon, "optuna", "success", log_file,
         summary=summary, duration_sec=elapsed, artifacts=artifacts,
     )
     return horizon, log_file
@@ -380,5 +397,5 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        record_step_failure("optuna_mingyuehu", t0, e)
+        record_step_failure("optuna", t0, e)
         raise

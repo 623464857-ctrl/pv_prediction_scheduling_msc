@@ -6,7 +6,7 @@ site_id,site_key,feature,median,scale,scale_method
 1,Mingyuehu_1,relative_humidity_pct,88.0,15.0,iqr
 1,Mingyuehu_1,atmosphere_hpa,994.0,4.0,iqr
 1,Mingyuehu_1,wind_speed_ms,2.2,1.6,iqr
-1,Mingyuehu_1,power_kw,0.0,1.7713672449459552,iqr
-1,Mingyuehu_1,power_pu,0.0,0.00035427344898919104,iqr
-1,Mingyuehu_1,power_ramp_15m_kw,0.0,0.001134240557653432,iqr
-1,Mingyuehu_1,power_ramp_15m_pu,0.0,2.2684811153067866e-07,iqr
+1,Mingyuehu_1,power_kw,0.0,18.115,iqr
+1,Mingyuehu_1,power_pu,0.0,0.06432883522727272,iqr
+1,Mingyuehu_1,power_ramp_15m_kw,0.0,0.010000000000000231,iqr
+1,Mingyuehu_1,power_ramp_15m_pu,0.0,3.55113636363643e-05,iqr

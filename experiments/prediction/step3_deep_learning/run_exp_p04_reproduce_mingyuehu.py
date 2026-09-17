@@ -60,6 +60,7 @@ def load_mingyuehu_sample_dir(horizon: int, lookback: int = None) -> Path:
     if lookback is None:
         lookback = HORIZON_CONFIGS[horizon]["lookback"]
     from experiments.prediction.step2_hyperparameter_search.exp_p04_common import SAMPLES_DIR
+    # 样本文件在 samples/mingyuehu_h{horizon}_lb{lookback} 目录下
     return SAMPLES_DIR / f"mingyuehu_h{horizon}_lb{lookback}"
 
 
@@ -142,11 +143,12 @@ def run_reproduce(horizon: int, logger) -> dict:
 
     # 加载样本
     X_train = np.load(hdir / "X_train_seq.npy")
-    y_residual_train = np.load(hdir / "y_train.npy")
+    y_train = np.load(hdir / "y_train.npy")
     X_val = np.load(hdir / "X_val_seq.npy")
-    y_residual_val = np.load(hdir / "y_val.npy")
+    y_val = np.load(hdir / "y_val.npy")
     X_test = np.load(hdir / "X_test_seq.npy")
-    y_residual_test = np.load(hdir / "y_test.npy")
+    y_test = np.load(hdir / "y_test.npy")
+    # 加载 anchor：lookback 前最后一个时间步的功率 (p.u.)
     y_anchor_test = np.load(hdir / "y_anchor_test.npy")
     y_scaler = load_mingyuehu_y_scaler(horizon, lookback)
 
@@ -189,8 +191,8 @@ def run_reproduce(horizon: int, logger) -> dict:
             **_best_params(params, mname),
         ).to(device)
 
-        train_loader = make_loader(X_train, y_residual_train, batch_size=batch_size, shuffle=True)
-        val_loader = make_loader(X_val, y_residual_val, batch_size=batch_size, shuffle=False)
+        train_loader = make_loader(X_train, y_train, batch_size=batch_size, shuffle=True)
+        val_loader = make_loader(X_val, y_val, batch_size=batch_size, shuffle=False)
 
         t0 = time.time()
         model, _ = train_with_early_stop(
@@ -199,21 +201,36 @@ def run_reproduce(horizon: int, logger) -> dict:
         )
         elapsed = time.time() - t0
 
-        # 残差预测 → 重构功率
-        y_pred_residual_scaled = predict(model, X_test, device)
-        y_pred_residual = y_scaler.inverse_transform(y_pred_residual_scaled)
-        y_pred_power = (y_anchor_test + y_pred_residual).astype(np.float32)
-        # 真实功率
-        y_test_residual_raw = y_scaler.inverse_transform(y_residual_test)
-        y_true_power = (y_anchor_test + y_test_residual_raw).astype(np.float32)
-        # 计算指标
+        # 预测并反归一化：残差 -> 实际功率
+        y_pred_scaled = predict(model, X_test, device)
+        # inverse_transform: 缩放残差 -> 原始残差 (p.u.)
+        y_pred_residual = y_scaler.inverse_transform(y_pred_scaled)
+        # 重建实际功率 = anchor + 残差
+        y_pred_power = y_anchor_test + y_pred_residual
+
+        # 真实功率同样重建
+        y_true_residual = y_scaler.inverse_transform(y_test)
+        y_true_power = y_anchor_test + y_true_residual
+
+        # 物理约束: 夜间功率必须为0（根据预测时间戳判断）
+        test_ts_seed = load_mingyuehu_test_timestamps(horizon, lookback)
+        night_mask_seed = (test_ts_seed.dt.hour < 6) | (test_ts_seed.dt.hour >= 20)
+        y_pred_power[night_mask_seed.values] = 0.0
+        y_true_power[night_mask_seed.values] = 0.0
+
+        # 确保无负值
+        y_pred_power = np.clip(y_pred_power, 0.0, None)
+        y_true_power = np.clip(y_true_power, 0.0, None)
+
+        # 计算指标（基于实际功率 p.u.）
         metrics = compute_all_metrics(y_true_power.ravel(), y_pred_power.ravel())
         metrics["seed"] = seed
         metrics["training_time_sec"] = round(elapsed, 2)
         all_metrics.append(metrics)
 
-        logger.info("  seed=%d  MAE=%.4f  RMSE=%.4f  R2=%.4f  time=%.1fs",
-                    seed, metrics["MAE"], metrics["RMSE"], metrics["R2"], elapsed)
+        logger.info("  seed=%d  MAE=%.4f  RMSE=%.4f  R2=%.4f  time=%.1fs  night=%d power_range=[%.4f, %.4f]",
+                    seed, metrics["MAE"], metrics["RMSE"], metrics["R2"], elapsed,
+                    night_mask_seed.sum(), float(y_pred_power.min()), float(y_pred_power.max()))
 
     # 汇总统计
     rows_df = pd.DataFrame(all_metrics)
@@ -247,21 +264,37 @@ def run_reproduce(horizon: int, logger) -> dict:
         mname, n_features=n_features, seq_len=seq_len,
         horizon=horizon, **_best_params(params, mname),
     ).to(device)
-    train_loader = make_loader(X_train, y_residual_train, batch_size=batch_size, shuffle=True)
-    val_loader = make_loader(X_val, y_residual_val, batch_size=batch_size, shuffle=False)
+    train_loader = make_loader(X_train, y_train, batch_size=batch_size, shuffle=True)
+    val_loader = make_loader(X_val, y_val, batch_size=batch_size, shuffle=False)
     model_seed, _ = train_with_early_stop(
         model_seed, train_loader, val_loader,
         lr=lr_use, max_epochs=max_epochs, patience=patience, device=device,
     )
-    # 残差预测 → 重构功率
-    y_pred_residual_scaled = predict(model_seed, X_test, device)
-    y_pred_residual = y_scaler.inverse_transform(y_pred_residual_scaled)
-    y_pred_power_seed = (y_anchor_test + y_pred_residual).astype(np.float32)
-    # 真实功率
-    y_test_residual_raw = y_scaler.inverse_transform(y_residual_test)
-    y_true_power_seed = (y_anchor_test + y_test_residual_raw).astype(np.float32)
+    # 预测并反归一化
+    y_pred_scaled = predict(model_seed, X_test, device)
+    # inverse_transform: 缩放残差 -> 原始残差 (p.u.)
+    y_pred_residual = y_scaler.inverse_transform(y_pred_scaled)
+    # 重建实际功率 = anchor + 残差
+    y_pred_power = y_anchor_test + y_pred_residual
+
+    # 真实功率同样重建
+    y_true_residual = y_scaler.inverse_transform(y_test)
+    y_true_power = y_anchor_test + y_true_residual
+
+    # --- 物理约束: 夜间功率必须为0 ---
+    # 根据预测时间戳判断是否为夜间
+    test_ts = load_mingyuehu_test_timestamps(horizon, lookback)
+    night_mask = (test_ts.dt.hour < 6) | (test_ts.dt.hour >= 20)
+    y_pred_power[night_mask.values] = 0.0
+    y_true_power[night_mask.values] = 0.0
+    logger.info("  夜间样本数: %d/%d，功率已强制置0", night_mask.sum(), len(test_ts))
+
+    # 最终clip: 确保无负值
+    y_pred_power = np.clip(y_pred_power, 0.0, None)
+    y_true_power = np.clip(y_true_power, 0.0, None)
+
     pred_path = save_mingyuehu_predictions(horizon, f"{mname}_seed42",
-                                          y_true_power_seed.ravel(), y_pred_power_seed.ravel(),
+                                          y_true_power.ravel(), y_pred_power.ravel(),
                                           lookback)
     logger.info("  seed=42 预测已保存: %s", pred_path.name)
 

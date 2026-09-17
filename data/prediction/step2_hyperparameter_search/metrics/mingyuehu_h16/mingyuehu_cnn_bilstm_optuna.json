@@ -1,0 +1,37 @@
+{
+  "dataset": "mingyuehu",
+  "model": "cnn_bilstm",
+  "horizon": 16,
+  "lookback": 96,
+  "search_method": "optuna_afsa_hybrid",
+  "best_strategy": "S6",
+  "best_params": {
+    "lr": 0.001,
+    "batch_size": 32,
+    "hidden_size": 128,
+    "num_layers": 2,
+    "dropout": 0.2,
+    "kernel_size": 5,
+    "cnn_channels": [
+      32,
+      128
+    ]
+  },
+  "best_value": 0.10122754648157889,
+  "quick_best_value": 0.1386789306998253,
+  "quick_composite_score": 125.367251223512,
+  "fold_losses": [
+    0.09639369576208053,
+    0.0919026496509711,
+    0.11538629403168504
+  ],
+  "best_fold_idx": 1,
+  "avg_power_metrics": {
+    "MAE": 0.12559260427951813,
+    "RMSE": 0.18450883315749336,
+    "MAPE": 13.477958679199219,
+    "R2": -0.19457674026489258
+  },
+  "n_trials": 80,
+  "prediction_mode": "residual"
+}

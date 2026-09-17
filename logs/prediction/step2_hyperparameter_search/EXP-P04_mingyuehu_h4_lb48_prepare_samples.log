@@ -1,0 +1,30 @@
+[INFO] 日志文件: logs\prediction\step2_hyperparameter_search\EXP-P04_mingyuehu_h4_lb48_prepare_samples.log
+[INFO] ============================================================
+[INFO] 明月湖数据集样本准备
+[INFO] horizon=4, lookback=48
+[INFO] 加载数据: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\data\prediction\step1_preprocessing\processed\mingyuehu_long.csv
+[INFO] 原始行数: 8064 | 时间范围: 2026-06-09 00:00:00 ~ 2026-08-31 23:45:00
+[INFO] 计算功率历史特征...
+[INFO] 功率特征计算完成
+[INFO] 特征数: 26, 目标值范围: [0.0000, 0.9543]
+[INFO] 构造序列: lookback=48, horizon=4, n_features=26
+[INFO] 总样本数: 7997 | X shape: (7997, 48, 26) | 残差 y shape: (7997, 4)
+[INFO] 训练集: 5597 | 验证集: 1200 | 测试集: 1200
+[INFO]   保存 X_train_seq.npy -> shape=(5597, 48, 26)
+[INFO]   保存 X_val_seq.npy -> shape=(1200, 48, 26)
+[INFO]   保存 X_test_seq.npy -> shape=(1200, 48, 26)
+[INFO]   保存 y_train.npy -> shape=(5597, 4)
+[INFO]   保存 y_val.npy -> shape=(1200, 4)
+[INFO]   保存 y_test.npy -> shape=(1200, 4)
+[INFO]   保存 y_anchor_train.npy -> shape=(5597, 4)
+[INFO]   保存 y_anchor_val.npy -> shape=(1200, 4)
+[INFO]   保存 y_anchor_test.npy -> shape=(1200, 4)
+[INFO]   保存 y_residual_train_raw.npy -> shape=(5597, 4)
+[INFO]   保存 y_residual_val_raw.npy -> shape=(1200, 4)
+[INFO]   保存 y_residual_test_raw.npy -> shape=(1200, 4)
+[INFO]   保存 scaler_params.json
+[INFO]   保存 test_timestamps.csv (1200 行)
+[INFO]   保存 meta.json
+[INFO] ============================================================
+[INFO] 样本构造完成！耗时: 0.3 秒
+[INFO] 保存目录: data\prediction\step2_hyperparameter_search\samples\mingyuehu_h4_lb48

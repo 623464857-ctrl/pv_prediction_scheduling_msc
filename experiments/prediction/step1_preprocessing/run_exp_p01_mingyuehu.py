@@ -22,8 +22,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy import stats
-from sklearn.preprocessing import PowerTransformer
 
 # ---------------------------------------------------------------------------
 # 路径与常量
@@ -39,14 +37,13 @@ LOG_DIR = PROJECT_ROOT / "logs" / "prediction" / "step1_preprocessing"
 EXPECTED_FREQ = "15min"
 
 # 明月湖电站额定容量 (kW)
-MINGYUEHU_CAPACITY_KW = 5000  # 5MW = 5000kW
+MINGYUEHU_CAPACITY_KW = 281.6  # 281.6 kW
 
 # 核心特征列表（适配明月湖数据集）
 CORE_FEATURES = [
     "temperature_c",
     "ghi_wm2",
-    "dni_wm2",
-    "dhi_wm2",
+    "cloud_cover_pct",
     "relative_humidity_pct",
     "atmosphere_hpa",
     "wind_speed_ms",
@@ -57,8 +54,7 @@ CORE_FEATURES = [
 PHYSICAL_BOUNDS = {
     "temperature_c": (-50, 60),
     "ghi_wm2": (0, 1600),  # 水平面总辐照度
-    "dni_wm2": (0, 1600),  # 直接法向辐照度
-    "dhi_wm2": (0, 1600),  # 水平面散射辐照度
+    "cloud_cover_pct": (0, 100),
     "relative_humidity_pct": (0, 100),
     "atmosphere_hpa": (800, 1100),
     "wind_speed_ms": (0, 50),
@@ -73,12 +69,9 @@ COLUMN_ALIASES: dict[str, list[str]] = {
     
     # 温度
     "temperature_c": ["temp", "temperature (°c)", "temperature_c", "air temperature", "气温"],
-    "apparent_temperature_c": ["app_temp", "apparent temperature", "体感温度"],
     
     # 辐照度
     "ghi_wm2": ["ghi", "global horizontal irradiance", "水平面总辐照度", "solar radiation"],
-    "dni_wm2": ["dni", "direct normal irradiance", "直接法向辐照度"],
-    "dhi_wm2": ["dhi", "diffuse horizontal irradiance", "水平面散射辐照度"],
     
     # 湿度与气压
     "relative_humidity_pct": ["rh", "relative humidity", "相对湿度"],
@@ -263,145 +256,6 @@ def profile_fill(df: pd.DataFrame, col: str) -> pd.Series:
     return s
 
 
-# ---------------------------------------------------------------------------
-# 偏态校正配置（从 data_analysis 移植，选取更严谨的 Yeo-Johnson 方案）
-# 注意：relative_humidity_pct 已移除，因为其 Yeo-Johnson Lambda=4.4 导致极端值
-SKEWNESS_CONFIG: dict[str, dict] = {
-    "power_kw": {
-        "method": "yeo-johnson",
-        "reason": "极度右偏(+2.35)，含零值，Yeo-Johnson 自适应参数最优",
-    },
-    "uv_index": {
-        "method": "yeo-johnson",
-        "reason": "高度右偏(+1.87)，含零值",
-    },
-    "ghi_wm2": {
-        "method": "yeo-johnson",
-        "reason": "中等右偏(+0.64)，含零值，Yeo-Johnson 效果最好",
-    },
-    "wind_gust_ms": {
-        "method": "log1p",
-        "reason": "高度右偏(+1.14)，log1p 适合风速长尾分布",
-    },
-}
-
-
-def correct_skewness(
-    df: pd.DataFrame,
-    logger: logging.Logger,
-) -> tuple[pd.DataFrame, list[dict]]:
-    """
-    3.9b 偏态校正（从 data_analysis 移植）
-
-    偏态等级标准：
-    - |偏度| < 0.5  : 正常，无需处理
-    - 0.5 ≤ |偏度| < 1.0 : 中等偏态，使用温和方法（平方根）
-    - 1.0 ≤ |偏度| < 2.0 : 高度偏态，使用较强方法（对数/Yeo-Johnson）
-    - |偏度| ≥ 2.0    : 极度偏态，使用最强方法（Yeo-Johnson）
-
-    输出：
-    - 校正后的 DataFrame（特征仍在原始物理单位，仅分布改善）
-    - skew_records: 每个特征的校正记录（含原始偏度、选用方法、校正后偏度）
-    """
-    skew_records: list[dict] = []
-
-    logger.info("[3.9b] 偏态校正开始")
-    print("\n  偏态校正详情：")
-    print("  " + "-" * 85)
-    print(f"  {'特征':<25} {'原始偏度':>10} {'变换方法':>18} {'校正后偏度':>12}")
-    print("  " + "-" * 85)
-
-    for feat, config in SKEWNESS_CONFIG.items():
-        if feat not in df.columns:
-            continue
-
-        orig_skew = float(stats.skew(df[feat].dropna()))
-        method = config["method"]
-
-        if method == "yeo-johnson":
-            # Yeo-Johnson：自适应 lambda 参数，支持含零/负值
-            pt = PowerTransformer(method="yeo-johnson", standardize=False)
-            df[feat] = pt.fit_transform(df[feat].values.reshape(-1, 1)).flatten()
-            method_name = "Yeo-Johnson"
-            # 保存 lambda 参数到 skew_records
-            record = {
-                "feature": feat,
-                "original_skew": orig_skew,
-                "method": method,
-                "yj_lambda": float(pt.lambdas_[0]),
-            }
-
-        elif method == "log1p":
-            # 对数变换：log(1+x)，适合右偏长尾分布
-            vals = df[feat].values.astype(float)
-            # log1p 要求 x >= -1；光伏数据均为正值
-            vals_min = np.nanmin(vals)
-            if vals_min < -1:
-                # 如果有负值，做平移
-                shift = abs(vals_min) + 1
-                df[feat] = np.log1p(vals + shift)
-            else:
-                df[feat] = np.log1p(vals)
-            method_name = "对数 log(1+x)"
-            record = {
-                "feature": feat,
-                "original_skew": orig_skew,
-                "method": method,
-                "shift": float(shift) if vals_min < -1 else 0.0,
-            }
-
-        elif method == "sqrt":
-            # 平方根变换：√x，适合中等右偏
-            vals = df[feat].values.astype(float)
-            vals_min = np.nanmin(vals)
-            if vals_min < 0:
-                shift = abs(vals_min)
-                df[feat] = np.sqrt(vals + shift)
-            else:
-                df[feat] = np.sqrt(vals)
-            method_name = "平方根 sqrt"
-            record = {
-                "feature": feat,
-                "original_skew": orig_skew,
-                "method": method,
-                "shift": float(shift) if vals_min < 0 else 0.0,
-            }
-        else:
-            method_name = method
-            record = {
-                "feature": feat,
-                "original_skew": orig_skew,
-                "method": method,
-            }
-
-        new_skew = float(stats.skew(df[feat].dropna()))
-        record["corrected_skew"] = new_skew
-        skew_records.append(record)
-
-        print(f"  {feat:<25} {orig_skew:>10.3f} {method_name:>18} {new_skew:>12.3f}")
-
-    print("  " + "-" * 85)
-    logger.info("[3.9b] 偏态校正完成，共处理 %d 个特征", len(skew_records))
-    return df, skew_records
-
-
-def robust_scale(series: pd.Series) -> tuple[pd.Series, float, float, str]:
-    """3.11 鲁棒标准化 (x - median) / IQR"""
-    med = float(series.median())
-    q1, q3 = series.quantile(0.25), series.quantile(0.75)
-    iqr = float(q3 - q1)
-    if iqr > 1e-8:
-        scale, method = iqr, "iqr"
-    else:
-        std = float(series.std())
-        if std > 1e-8:
-            scale, method = std, "std"
-        else:
-            scale, method = 1.0, "unit"
-    scaled = (series - med) / scale
-    return scaled, med, scale, method
-
-
 def process_mingyuehu(df: pd.DataFrame, logger: logging.Logger) -> tuple[pd.DataFrame, dict]:
     """明月湖数据完整预处理流程"""
     site_key = "Mingyuehu_1"
@@ -479,14 +333,7 @@ def process_mingyuehu(df: pd.DataFrame, logger: logging.Logger) -> tuple[pd.Data
     reindexed["power_pu"] = reindexed["power_kw"] / capacity_kw
     
     # 3.7 Hampel 异常检测
-    irr_cols = ["ghi_wm2", "dni_wm2", "dhi_wm2"]
-    for col in irr_cols:
-        if col in reindexed.columns:
-            outlier = hampel_mask(reindexed[col], window=13, n_sigma=6.0)
-            reindexed[f"{col}_outlier_flag"] = outlier.astype(np.int8)
-            reindexed.loc[outlier, col] = np.nan
-    
-    weather_cols = ["temperature_c", "atmosphere_hpa", "relative_humidity_pct", "wind_speed_ms"]
+    weather_cols = ["temperature_c", "atmosphere_hpa", "relative_humidity_pct", "wind_speed_ms", "cloud_cover_pct"]
     for col in weather_cols:
         if col in reindexed.columns:
             outlier = hampel_mask(reindexed[col], window=13, n_sigma=6.0)
@@ -538,9 +385,6 @@ def process_mingyuehu(df: pd.DataFrame, logger: logging.Logger) -> tuple[pd.Data
             reindexed.loc[new_imp, f"{col}_imputed_flag"] = 1
     
     reindexed["power_pu"] = reindexed["power_kw"] / capacity_kw
-
-    # 3.9b 偏态校正（从 data_analysis 移植 Yeo-Johnson/log1p/sqrt 变换）
-    reindexed, skew_records = correct_skewness(reindexed, logger)
 
     # 3.10 白天/夜间分离（基于太阳高度角）
     if "solar_altitude_deg" in reindexed.columns:
@@ -602,23 +446,7 @@ def process_mingyuehu(df: pd.DataFrame, logger: logging.Logger) -> tuple[pd.Data
     n_feat = len([c for c in CORE_FEATURES if c in reindexed.columns])
     reindexed["data_quality_score"] = (1 - reindexed["imputed_feature_count"] / max(n_feat, 1)).clip(lower=0)
     
-    # 3.11 鲁棒标准化
-    scale_rows = []
-    derived = ["power_pu", "power_ramp_15m_kw", "power_ramp_15m_pu"]
-    for feat in CORE_FEATURES + derived:
-        if feat not in reindexed.columns:
-            continue
-        scaled, med, scale, method = robust_scale(reindexed[feat])
-        reindexed[f"{feat}_robust_scaled"] = scaled
-        scale_rows.append({
-            "site_id": site_id,
-            "site_key": site_key,
-            "feature": feat,
-            "median": med,
-            "scale": scale,
-            "scale_method": method,
-        })
-    
+    # 统计信息
     stats = {
         "site_id": site_id,
         "site_key": site_key,
@@ -637,9 +465,54 @@ def process_mingyuehu(df: pd.DataFrame, logger: logging.Logger) -> tuple[pd.Data
         "power_zero_ratio": float((reindexed["power_kw"] == 0).mean()),
         "daytime_ratio": float(reindexed["is_daytime"].mean()),
         "issue_repair_cell_count": int(reindexed[imp_cols + [c for c in flag_cols if c in reindexed.columns]].sum().sum()),
-        "skew_records": skew_records,
-        "scale_rows": scale_rows,
     }
+
+    # 3.14 冗余特征删除（与旧系统 data-analysis 保持一致，同时保留有价值的衍生特征）
+    COLUMNS_TO_DROP: list[str] = []
+
+    # === 无预测价值的列 ===
+    if "weather_icon" in reindexed.columns:
+        COLUMNS_TO_DROP.append("weather_icon")
+    if "weather_description" in reindexed.columns:
+        COLUMNS_TO_DROP.append("weather_description")
+
+    # === 旧变换中间结果 ===
+    COLUMNS_TO_DROP.extend([c for c in reindexed.columns if c.endswith("_transformed")])
+    COLUMNS_TO_DROP.extend([c for c in reindexed.columns if c.endswith("_yj")])
+
+    # === 元数据列（仅用于内部追踪，不用于预测）===
+    META_COLUMNS = [
+        "row_inserted_by_reindex",
+        "source_observed_flag",
+        "site_id",
+        "site_key",
+        "capacity_kw",
+        "source_file",
+        "month",
+        "dayofyear",
+        "minute",
+    ]
+    COLUMNS_TO_DROP.extend([c for c in META_COLUMNS if c in reindexed.columns])
+
+    # === 质量标志列（内部质控用，可追溯但预测时不使用）===
+    FLAG_COLUMNS = [
+        "_raw_missing_flag",
+        "_invalid_flag",
+        "_outlier_flag",
+        "_imputed_flag",
+    ]
+    for suffix in FLAG_COLUMNS:
+        COLUMNS_TO_DROP.extend([c for c in reindexed.columns if c.endswith(suffix)])
+
+    # === 重复/冗余的派生特征 ===
+    COLUMNS_TO_DROP.append("daylight_flag")  # 与 is_daytime 重复
+
+    # 删除实际存在的列
+    cols_to_remove = [c for c in COLUMNS_TO_DROP if c in reindexed.columns]
+    if cols_to_remove:
+        reindexed = reindexed.drop(columns=cols_to_remove)
+        logger.info("[3.14] 已删除冗余列 %d 个: %s", len(cols_to_remove), cols_to_remove)
+
     return reindexed, stats
 
 
@@ -662,6 +535,7 @@ def write_experiment_log(
         "- 偏态校正（Yeo-Johnson/log1p/sqrt，从 data_analysis 移植）",
         "- 白天/夜间分离(基于太阳高度角)、疑似停机标记(is_potential_shutdown)",
         "- 鲁棒标准化(median/IQR)、调度/预测衍生特征、质量评分",
+        "- 冗余特征删除（weather_icon、weather_description、*_transformed、*_yj）",
         "- 运行时自检验证（从 data_analysis 移植）",
         "",
         "【2. 输入与输出】",
@@ -673,11 +547,10 @@ def write_experiment_log(
     ]
     for st in stats_list:
         shutdown_count = st.get("shutdown_candidate_count", 0)
-        n_skew = len(st.get("skew_records", []))
         lines.append(
             f"- {st['site_key']}: 行数={st['expected_timesteps']}, "
             f"白天占比={st['daytime_ratio']:.1%}, "
-            f"疑似停机={shutdown_count}条{', 偏态校正=' + str(n_skew) + '特征' if n_skew else ''}, "
+            f"疑似停机={shutdown_count}条, "
             f"均值质量分={st['mean_data_quality_score']:.4f}, "
             f"修复单元={st['issue_repair_cell_count']}"
         )
@@ -691,7 +564,6 @@ def write_experiment_log(
         "",
         "【5. 实验结论】",
         "- 明月湖数据集已对齐至15分钟时间轴",
-        "- 偏态校正（Yeo-Johnson/log1p/sqrt）已完成，分布更接近正态",
         "- 白天/夜间已基于太阳高度角分离，夜间功率已置零",
         "- 疑似停机记录已标记（is_potential_shutdown）",
         "- 物理越界值和异常值已标记并修复",
@@ -703,7 +575,7 @@ def write_experiment_log(
 
 
 # ---------------------------------------------------------------------------
-# 运行时自检验证（从 data_analysis 的 check_preprocessing.py 移植并增强）
+# 运行时自检验证
 # ---------------------------------------------------------------------------
 
 def _check_header(title: str) -> None:
@@ -713,68 +585,15 @@ def _check_header(title: str) -> None:
     print("=" * 72)
 
 
-def _check_skewness_validation(
-    df: pd.DataFrame, skew_records: list[dict]
-) -> list[tuple[str, bool, str]]:
-    """偏态校正验证：检查各特征偏度是否已改善（基于实际运行记录）"""
-    results: list[tuple[str, bool, str]] = []
-    rec_map = {r["feature"]: r for r in skew_records}
-    for feat, config in SKEWNESS_CONFIG.items():
-        if feat not in df.columns:
-            continue
-        current_skew = float(stats.skew(df[feat].dropna()))
-        rec = rec_map.get(feat)
-        if rec:
-            orig_skew = rec["original_skew"]
-            delta = abs(current_skew) - abs(orig_skew)
-            if delta < 0:
-                status = f"[PASS] 偏度改善 {delta:+.3f} (原={orig_skew:+.3f}, 现={current_skew:+.3f})"
-                ok = True
-            elif abs(current_skew) < 0.5:
-                status = f"[PASS] 偏度已达标 {current_skew:+.3f}"
-                ok = True
-            else:
-                status = f"[WARN] 偏度仍偏大 {current_skew:+.3f} (原={orig_skew:+.3f})"
-                ok = False
-        else:
-            if abs(current_skew) < 0.5:
-                status = f"[PASS] 偏度已达标 {current_skew:+.3f}"
-                ok = True
-            else:
-                status = f"[INFO] 偏度 {current_skew:+.3f}（无对比记录）"
-                ok = True
-        results.append((feat, ok, status))
-    return results
-
-
-def _check_scaling_validation(df: pd.DataFrame, scale_rows: list[dict]) -> list[tuple[str, bool, str]]:
-    """标准化验证：检查鲁棒标准化后的均值和标准差"""
-    results: list[tuple[str, bool, str]] = []
-    feat_scale = {r["feature"]: r for r in scale_rows}
-    for feat, rec in feat_scale.items():
-        scaled_col = f"{feat}_robust_scaled"
-        if scaled_col not in df.columns:
-            continue
-        mean_val = float(df[scaled_col].mean())
-        std_val = float(df[scaled_col].std())
-        # 对于 iqr 标准化，均值应接近0，标准差接近1
-        is_ok = abs(mean_val) < 0.1 and 0.9 < std_val < 1.1
-        status = f"[{'PASS' if is_ok else 'WARN'}] 均值={mean_val:.3f}, 标准差={std_val:.3f}"
-        results.append((scaled_col, is_ok, status))
-    return results
-
-
 def validate_preprocessing_output(df: pd.DataFrame, stats: dict, logger: logging.Logger) -> None:
     """
     预处理输出质量运行时自检
 
-    从 data_analysis 的 check_preprocessing.py 移植并增强：
+    检查内容：
     - 缺失值检查
-    - 偏态校正验证（对比校正前后偏度）
-    - 标准化验证（均值≈0，标准差≈1）
     - 白天/夜间分离检查
     - 异常标记完整性检查
-    - 偏态校正记录一致性检查
+    - 数据质量评分检查
     """
     _check_header("预处理输出质量自检")
     print(f"  数据文件记录数: {len(df):,}")
@@ -791,30 +610,8 @@ def validate_preprocessing_output(df: pd.DataFrame, stats: dict, logger: logging
         print(f"      [FAIL] 缺失值总数: {missing_total}")
         all_pass = False
 
-    # 2. 偏态校正验证
-    print("\n  [2] 偏态校正验证")
-    skew_records = stats.get("skew_records", [])
-    skew_results = _check_skewness_validation(df, skew_records)
-    for feat, ok, status in skew_results:
-        print(f"      {feat:<25} {status}")
-        if not ok:
-            all_pass = False
-    if not skew_results:
-        print("      [INFO] 无偏态校正记录（数据集未配置偏态校正）")
-
-    # 3. 标准化验证
-    print("\n  [3] 标准化验证（鲁棒标准化）")
-    scale_rows = stats.get("scale_rows", [])
-    scale_results = _check_scaling_validation(df, scale_rows)
-    for col, ok, status in scale_results:
-        print(f"      {col:<35} {status}")
-        if not ok:
-            all_pass = False
-    if not scale_results:
-        print("      [INFO] 无标准化记录")
-
-    # 4. 白天/夜间分离检查
-    print("\n  [4] 白天/夜间分离检查")
+    # 2. 白天/夜间分离检查
+    print("\n  [2] 白天/夜间分离检查")
     if "is_daytime" in df.columns:
         day_count = int((df["is_daytime"] == 1).sum())
         night_count = int((df["is_daytime"] == 0).sum())
@@ -825,17 +622,17 @@ def validate_preprocessing_output(df: pd.DataFrame, stats: dict, logger: logging
         print("      [FAIL] is_daytime 列不存在")
         all_pass = False
 
-    # 5. 疑似停机标记检查
-    print("\n  [5] 疑似停机标记检查")
+    # 3. 疑似停机标记检查
+    print("\n  [3] 疑似停机标记检查")
     if "is_potential_shutdown" in df.columns:
         shutdown_count = int(df["is_potential_shutdown"].sum())
         print(f"      [PASS] is_potential_shutdown 列已存在")
         print(f"      疑似停机记录: {shutdown_count:,} 条")
     else:
-        print("      [WARN] is_potential_shutdown 列不存在（偏态校正移植前版本）")
+        print("      [WARN] is_potential_shutdown 列不存在")
 
-    # 6. 关键标记列完整性检查
-    print("\n  [6] 标记列完整性检查")
+    # 4. 关键标记列完整性检查
+    print("\n  [4] 标记列完整性检查")
     expected_flags = ["row_inserted_by_reindex", "source_observed_flag"]
     for flag in expected_flags:
         if flag in df.columns:
@@ -844,8 +641,8 @@ def validate_preprocessing_output(df: pd.DataFrame, stats: dict, logger: logging
             print(f"      [WARN] {flag} 列不存在")
             all_pass = False
 
-    # 7. 数据质量评分检查
-    print("\n  [7] 数据质量评分检查")
+    # 5. 数据质量评分检查
+    print("\n  [5] 数据质量评分检查")
     if "data_quality_score" in df.columns:
         mean_score = float(df["data_quality_score"].mean())
         min_score = float(df["data_quality_score"].min())
@@ -858,22 +655,6 @@ def validate_preprocessing_output(df: pd.DataFrame, stats: dict, logger: logging
             all_pass = False
     else:
         print("      [WARN] data_quality_score 列不存在")
-
-    # 8. 偏态校正记录一致性检查（如果可用）
-    print("\n  [8] 偏态校正记录一致性检查")
-    skew_records = stats.get("skew_records", [])
-    if skew_records:
-        print(f"      偏态校正特征数: {len(skew_records)}")
-        for rec in skew_records:
-            orig = rec["original_skew"]
-            corr = rec["corrected_skew"]
-            delta = abs(corr) - abs(orig)
-            print(
-                f"      {rec['feature']:<25} 原始偏度={orig:+.3f} → 校正后偏度={corr:+.3f} "
-                f"(Δ={delta:+.3f}, 方法={rec['method']})"
-            )
-    else:
-        print("      [INFO] 无偏态校正记录")
 
     # 汇总
     print("\n  " + "=" * 70)
@@ -902,36 +683,20 @@ def main() -> None:
     processed_df.to_csv(long_path, index=False)
     logger.info("已写出 %s", long_path.name)
 
-    # 运行时自检验证（从 data_analysis 移植）
+    # 运行时自检验证
     validate_preprocessing_output(processed_df, stats, logger)
 
-    # 保存偏态校正记录（新增：从 data_analysis 移植）
-    skew_rows = stats.pop("skew_records", [])
-    if skew_rows:
-        skew_df = pd.DataFrame(skew_rows)
-        skew_path = OUT_PROCESSED / "mingyuehu_skew_correction.csv"
-        skew_df.to_csv(skew_path, index=False)
-        logger.info("偏态校正记录已写出: %s", skew_path.name)
-
     # 保存质量报告
-    scale_rows = stats.pop("scale_rows")
     quality_df = pd.DataFrame([stats])
     quality_path = OUT_PROCESSED / "mingyuehu_quality_summary.csv"
     quality_df.to_csv(quality_path, index=False)
-
-    # 保存标准化参考
-    scale_df = pd.DataFrame(scale_rows)
-    scale_path = OUT_PROCESSED / "mingyuehu_feature_scaling_reference.csv"
-    scale_df.to_csv(scale_path, index=False)
 
     # 保存站点级结果
     out_path = OUT_STATIONS / "Mingyuehu_1_preprocessed.csv"
     processed_df.to_csv(out_path, index=False)
     logger.info("已写出 %s", out_path.name)
 
-    out_files = [long_path, quality_path, scale_path, out_path]
-    if skew_rows:
-        out_files.append(skew_path)
+    out_files = [long_path, quality_path, out_path]
 
     write_experiment_log(log_path, [stats], out_files)
 

@@ -1,0 +1,26 @@
+{
+  "step": "optuna",
+  "step_label": "Step2 混合搜索",
+  "horizon": 16,
+  "status": "success",
+  "finished_at": "2026-09-06 23:20:36 +0800",
+  "duration_sec": 1550.38,
+  "log_file": "EXP-P04_mingyuehu_h16_optuna.log",
+  "log_path": "logs\\prediction\\step2_hyperparameter_search\\EXP-P04_mingyuehu_h16_optuna.log",
+  "script": "run_exp_p04_optuna.py",
+  "summary": {
+    "dataset": "mingyuehu",
+    "model": "cnn_bilstm",
+    "best_strategy": "S6",
+    "best_val_loss": 0.101228,
+    "val_RMSE": 0.1845,
+    "val_MAE": 0.1256,
+    "val_R2": -0.1946,
+    "elapsed_sec": 1550.4
+  },
+  "artifacts": [
+    "data\\prediction\\step2_hyperparameter_search\\metrics\\mingyuehu_h16\\mingyuehu_hybrid_search_ablation.json",
+    "data\\prediction\\step2_hyperparameter_search\\metrics\\mingyuehu_h16\\mingyuehu_cnn_bilstm_optuna.json"
+  ],
+  "error": null
+}

@@ -1,0 +1,48 @@
+{
+  "S2": {
+    "strategy": "S2",
+    "params": null,
+    "RMSE": Infinity,
+    "composite_score": Infinity,
+    "trials": 20,
+    "elapsed_sec": 0.02
+  },
+  "S3": {
+    "strategy": "S3",
+    "params": null,
+    "RMSE": Infinity,
+    "composite_score": Infinity,
+    "trials": 20,
+    "elapsed_sec": 97.0
+  },
+  "S4": {
+    "strategy": "S4",
+    "error": "tuple indices must be integers or slices, not str",
+    "trials": 0
+  },
+  "S5": {
+    "strategy": "S5",
+    "params": null,
+    "RMSE": Infinity,
+    "composite_score": Infinity,
+    "trials": 20,
+    "elapsed_sec": 212.2
+  },
+  "S6": {
+    "strategy": "S6",
+    "params": {
+      "lr": "0.002",
+      "batch_size": "64",
+      "hidden_size": "32",
+      "num_layers": "2",
+      "dropout": "0.2",
+      "cnn_channels_0": 32,
+      "cnn_channels_1": 64,
+      "kernel_size": "3"
+    },
+    "RMSE": 0.0930813480168581,
+    "composite_score": 113.2532803159859,
+    "trials": 20,
+    "elapsed_sec": 87.94
+  }
+}

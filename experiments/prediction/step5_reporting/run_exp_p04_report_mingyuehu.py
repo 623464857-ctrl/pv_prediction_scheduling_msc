@@ -254,8 +254,16 @@ def _plot_predictions_all_horizons(
     return out
 
 
+def _get_seed42_metrics(rep: dict, seed: int = 42) -> dict | None:
+    """从 per_seed 列表中获取指定 seed 的指标。"""
+    for seed_data in rep.get("per_seed", []):
+        if seed_data.get("seed") == seed:
+            return seed_data
+    return None
+
+
 def _plot_comparison_horizons(logger):
-    """绘制三个 horizon 的 MAE/RMSE/R² 对比柱状图。"""
+    """绘制三个 horizon 的 MAE/RMSE/R² 对比柱状图（使用 seed=42 指标）。"""
     horizons = [(1, "15min"), (4, "1h"), (16, "4h")]
     all_models = ["cnn_bilstm"]
 
@@ -265,9 +273,17 @@ def _plot_comparison_horizons(logger):
         for mname in all_models:
             rep = _load_reproduce(h, mname)
             if rep:
-                mae_data[hlabel][MODEL_DISPLAY_NAMES.get(mname, mname)] = rep["mean"].get("MAE", 0)
-                rmse_data[hlabel][MODEL_DISPLAY_NAMES.get(mname, mname)] = rep["mean"].get("RMSE", 0)
-                r2_data[hlabel][MODEL_DISPLAY_NAMES.get(mname, mname)] = rep["mean"].get("R2", 0)
+                # 使用 seed=42 的指标，与预测曲线保持一致
+                seed42 = _get_seed42_metrics(rep, seed=42)
+                if seed42:
+                    mae_data[hlabel][MODEL_DISPLAY_NAMES.get(mname, mname)] = seed42.get("MAE", 0)
+                    rmse_data[hlabel][MODEL_DISPLAY_NAMES.get(mname, mname)] = seed42.get("RMSE", 0)
+                    r2_data[hlabel][MODEL_DISPLAY_NAMES.get(mname, mname)] = seed42.get("R2", 0)
+                else:
+                    # Fallback to mean if seed=42 not found
+                    mae_data[hlabel][MODEL_DISPLAY_NAMES.get(mname, mname)] = rep["mean"].get("MAE", 0)
+                    rmse_data[hlabel][MODEL_DISPLAY_NAMES.get(mname, mname)] = rep["mean"].get("RMSE", 0)
+                    r2_data[hlabel][MODEL_DISPLAY_NAMES.get(mname, mname)] = rep["mean"].get("R2", 0)
 
     display_names = []
     for m in all_models:
@@ -409,7 +425,7 @@ def _gen_markdown_report(horizon: int, horizon_label: str, all_models: list[str]
     lines.append("## 1. 实验配置\n\n")
     lines.append("| 配置项 | 值 |\n|---|---|\n")
     lines.append(f"| 数据集 | 明月湖光伏电站 |\n")
-    lines.append(f"| 电站容量 | {meta.get('capacity_kw', CAPACITY_KW := 5000):.0f} kW |\n")
+    lines.append(f"| 电站容量 | {meta.get('capacity_kw', CAPACITY_KW := 281.6):.0f} kW |\n")
     lines.append(f"| Lookback | {meta['lookback']} |\n")
     lines.append(f"| Horizon | {horizon} |\n")
     lines.append(f"| 特征数量 | {meta['n_features']} |\n")
@@ -518,13 +534,22 @@ def generate_figures(horizon: int, horizon_label: str, all_models: list[str], lo
                 df.insert(0, "timestamp", ts.values[: len(df)])
             preds[mname] = df
 
-    # 1. 指标柱状图
+    # 1. 指标柱状图（使用 seed=42 指标，与预测曲线保持一致）
     metrics_list = _build_metrics_list(horizon, all_models)
     if metrics_list:
         display_names = [MODEL_DISPLAY_NAMES.get(m["model"], m["model"]) for m in metrics_list]
-        mae_vals = [m["mean"].get("MAE", 0) for m in metrics_list]
-        rmse_vals = [m["mean"].get("RMSE", 0) for m in metrics_list]
-        r2_vals = [m["mean"].get("R2", 0) for m in metrics_list]
+        # 使用 seed=42 的指标
+        mae_vals, rmse_vals, r2_vals = [], [], []
+        for m in metrics_list:
+            seed42 = _get_seed42_metrics(m, seed=42)
+            if seed42:
+                mae_vals.append(seed42.get("MAE", 0))
+                rmse_vals.append(seed42.get("RMSE", 0))
+                r2_vals.append(seed42.get("R2", 0))
+            else:
+                mae_vals.append(m["mean"].get("MAE", 0))
+                rmse_vals.append(m["mean"].get("RMSE", 0))
+                r2_vals.append(m["mean"].get("R2", 0))
 
         df_metrics = pd.DataFrame({
             "display_name": display_names,
@@ -556,10 +581,17 @@ def generate_figures(horizon: int, horizon_label: str, all_models: list[str], lo
         plt.close(fig_cmp)
         logger.info("  保存 %s", out_combined.name)
 
-        # 训练时间
+        # 训练时间（使用 seed=42 指标）
+        time_vals = []
+        for m in metrics_list:
+            seed42 = _get_seed42_metrics(m, seed=42)
+            if seed42:
+                time_vals.append(seed42.get("training_time_sec", 0))
+            else:
+                time_vals.append(m["mean"].get("training_time_sec", 0))
         df_time = pd.DataFrame({
             "display_name": display_names,
-            "training_time_sec": [m["mean"].get("training_time_sec", 0) for m in metrics_list],
+            "training_time_sec": time_vals,
         })
         out_time = fig_h / "training_time.png"
         _plot_training_time_comparison(df_time, out_time)
