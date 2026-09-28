@@ -1,0 +1,10 @@
+[INFO] 日志文件: logs\prediction\step2_hyperparameter_search\EXP-P05_bozhou_evaluate.log
+[INFO] ============================================================
+[INFO] 亳州数据集预测与评估
+[INFO] Horizons: [1, 4, 16]
+[INFO] Seed: 42
+[INFO] horizon=1 完成: RMSE=0.0437, MAE=0.0233, R2=0.9277
+[INFO] horizon=4 完成: RMSE=0.0595, MAE=0.0331, R2=0.8652
+[INFO] horizon=16 完成: RMSE=0.0713, MAE=0.0409, R2=0.8057
+[INFO] 开始绘图...
+[INFO] 绘图完成

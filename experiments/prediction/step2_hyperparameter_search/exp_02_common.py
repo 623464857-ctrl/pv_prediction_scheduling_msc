@@ -325,16 +325,24 @@ def plot_training_time_comparison(metrics_df: pd.DataFrame, out_path) -> None:
 # =============================================================================
 
 BOZHOU_LOOKBACK_MAP = {1: 16, 4: 48, 16: 96}
-BOZHOU_METRICS_DIR = STEP4_ROOT / "metrics"
-BOZHOU_MODELS_DIR = STEP4_ROOT / "models"
-BOZHOU_PRED_DIR = STEP4_ROOT / "predictions"
-BOZHOU_FIGURES_DIR = STEP4_ROOT / "figures"
+# 模型和结果存储在 result 目录
+BOZHOU_MODELS_DIR = PROJECT_ROOT / "result" / "models"
+BOZHOU_METRICS_DIR = PROJECT_ROOT / "result" / "metrics"
+BOZHOU_PRED_DIR = PROJECT_ROOT / "result" / "predictions"
+BOZHOU_FIGURES_DIR = PROJECT_ROOT / "result" / "figures"
+# 样本数据实际存储位置
+BOZHOU_SAMPLES_DIR = PROJECT_ROOT / "result" / "samples"
 
 
 def load_bozhou_sample_dir(horizon: int, lookback: int = None) -> Path:
     """返回亳州样本目录"""
     if lookback is None:
         lookback = BOZHOU_LOOKBACK_MAP.get(horizon, 16)
+    # 从 result/samples 目录加载
+    sample_dir = BOZHOU_SAMPLES_DIR / f"bozhou_h{horizon}_lb{lookback}"
+    if sample_dir.exists():
+        return sample_dir
+    # 兼容旧版目录命名
     return STEP4_ROOT / "samples" / f"bozhou_h{horizon}_lb{lookback}"
 
 
@@ -354,6 +362,7 @@ def load_bozhou_y_scaler(horizon: int, lookback: int = None):
 
 def load_best_params(horizon: int) -> dict:
     """加载亳州最佳超参数"""
+    # 从 result/metrics 目录加载
     metrics_dir = BOZHOU_METRICS_DIR / f"bozhou_h{horizon}"
     optuna_file = metrics_dir / "bozhou_cnn_bilstm_optuna.json"
     

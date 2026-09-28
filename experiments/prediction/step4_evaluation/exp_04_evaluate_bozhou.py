@@ -27,6 +27,7 @@ from experiments.prediction.step2_hyperparameter_search.exp_02_common import (
     BOZHOU_PRED_DIR,
     STEP4_ROOT,
     compute_all_metrics,
+    load_best_params,
     load_bozhou_sample_dir,
     load_bozhou_y_scaler,
     setup_logger,
@@ -72,14 +73,20 @@ def predict_horizon(horizon: int, seed: int = 42) -> dict:
     # 加载 y scaler
     y_scaler = load_bozhou_y_scaler(horizon)
     
+    # 加载最佳参数
+    best_params = load_best_params(horizon)
+    
     # 构建并加载模型
     model = build_model(
         "cnn_bilstm",
         n_features=n_features,
         seq_len=seq_len,
         horizon=horizon,
-        hidden_size=64, num_layers=2, dropout=0.2,
-        cnn_channels=[32, 64], kernel_size=3,
+        hidden_size=best_params.get("hidden_size", 64),
+        num_layers=best_params.get("num_layers", 2),
+        dropout=best_params.get("dropout", 0.2),
+        cnn_channels=best_params.get("cnn_channels", [32, 64]),
+        kernel_size=best_params.get("kernel_size", 3),
     ).to(device)
     
     model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
@@ -93,7 +100,7 @@ def predict_horizon(horizon: int, seed: int = 42) -> dict:
     
     # 计算指标
     metrics = compute_all_metrics(y_true.ravel(), y_pred.ravel())
-    print(f"  测试集指标: RMSE={metrics['RMSE']:.4f}, MAE={metrics['MAE']:.4f}, R²={metrics['R2']:.4f}")
+    print(f"  Test metrics: RMSE={metrics['RMSE']:.4f}, MAE={metrics['MAE']:.4f}, R2={metrics['R2']:.4f}")
     
     # 保存预测结果
     pred_dir = BOZHOU_PRED_DIR / f"bozhou_h{horizon}"
@@ -103,11 +110,13 @@ def predict_horizon(horizon: int, seed: int = 42) -> dict:
     test_timestamps = pd.read_csv(hdir / "test_timestamps.csv")
     test_timestamps["timestamp"] = pd.to_datetime(test_timestamps["timestamp"])
     
-    # horizon > 1 时展平时间戳
+    # y_true, y_pred shape: (n_samples, horizon) for h>1, (n_samples, 1) for h=1
+    # For horizon > 1: repeat each timestamp 'horizon' times to match flattened y
     if horizon > 1:
-        n_samples = len(y_true)
+        n_samples = len(y_true)  # Number of sequences
         n_repeat = horizon
-        ts_flat = np.repeat(test_timestamps["timestamp"].values, n_repeat)[:n_samples]
+        # Repeat each timestamp horizon times, length = n_samples * horizon
+        ts_flat = np.repeat(test_timestamps["timestamp"].values, n_repeat)
     else:
         ts_flat = test_timestamps["timestamp"].values
     
@@ -118,7 +127,7 @@ def predict_horizon(horizon: int, seed: int = 42) -> dict:
         "y_pred": y_pred.ravel(),
     })
     pred_df.to_csv(pred_dir / "predictions.csv", index=False)
-    print(f"  预测结果已保存: {pred_dir / 'predictions.csv'}")
+    print(f"  Predictions saved: {pred_dir / 'predictions.csv'}")
     
     # 返回结果
     return {
@@ -158,12 +167,10 @@ def plot_bozhou_predictions(results: dict, output_path: Path = None):
         timestamps = res["timestamps"]
         metrics = res["metrics"]
         
-        # 处理时间戳 - horizon > 1 时需要重复
+        # 处理时间戳 - horizon > 1 时需要重复每个时间戳horizon次
         if horizon > 1:
-            n_samples = len(y_true)
             n_repeat = horizon
             ts_vals = np.repeat(timestamps["timestamp"].values, n_repeat)
-            ts_vals = ts_vals[:n_samples]
         else:
             ts_vals = timestamps["timestamp"].values
         

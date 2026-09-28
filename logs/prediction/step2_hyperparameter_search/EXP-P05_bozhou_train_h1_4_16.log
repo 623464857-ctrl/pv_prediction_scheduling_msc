@@ -1,0 +1,8 @@
+[INFO] 日志文件: logs\prediction\step2_hyperparameter_search\EXP-P05_bozhou_train_h1_4_16.log
+[INFO] ============================================================
+[INFO] 亳州数据集模型训练
+[INFO] Horizons: [1, 4, 16]
+[INFO] Seed: 42
+[INFO] horizon=1 完成 (101.8s)
+[INFO] horizon=4 完成 (171.1s)
+[INFO] horizon=16 完成 (265.9s)
