@@ -28,6 +28,9 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 CAPACITY_KW = 390
 CAPACITY_UPPER = CAPACITY_KW * 1.05  # 409.5 kW
 
+# 数据划分比例（用于避免预处理时的数据泄露）
+TRAIN_RATIO = 0.70
+
 # =============================================================================
 # Step 2: 天气类型编码映射
 # =============================================================================
@@ -265,9 +268,16 @@ def step6_hampel_filter(df, reporter):
     rows_before = len(df)
     
     def hampel_detect(series, window=13, n_sigma=6.0):
-        """Hampel 异常检测"""
-        medians = series.rolling(window=window, center=True, min_periods=1).median()
-        mad = (series - medians).abs().rolling(window=window, center=True, min_periods=1).median() * 1.4826
+        """Hampel 异常检测 - 仅使用历史数据（center=False 避免未来信息泄露）
+        
+        使用滚动窗口计算中位数和MAD，避免引入未来信息。
+        适用于时间序列数据清洗。
+        """
+        # 计算滚动中位数（仅使用过去数据）
+        medians = series.rolling(window=window, center=False, min_periods=1).median()
+        # 计算MAD（Median Absolute Deviation）
+        mad = (series - medians).abs().rolling(window=window, center=False, min_periods=1).median() * 1.4826
+        # 计算阈值
         threshold = n_sigma * mad
         return series - medians, threshold, medians
     
@@ -542,10 +552,15 @@ def step12_derived_features(df, reporter):
     df['sin_hour'] = np.sin(2 * np.pi * df['hour'] / 24)
     df['cos_hour'] = np.cos(2 * np.pi * df['hour'] / 24)
     
-    # GHI周期性特征
-    ghi_norm = (df['ghi_wm2'] - df['ghi_wm2'].min()) / (df['ghi_wm2'].max() - df['ghi_wm2'].min() + 1e-6)
+    # GHI周期性特征（使用训练集统计避免数据泄露）
+    n_train = int(len(df) * TRAIN_RATIO)
+    ghi_train = df['ghi_wm2'].iloc[:n_train]
+    ghi_min = ghi_train.min()
+    ghi_max = ghi_train.max()
+    ghi_norm = (df['ghi_wm2'] - ghi_min) / (ghi_max - ghi_min + 1e-6)
     df['sin_ghi'] = np.sin(2 * np.pi * ghi_norm)
     df['cos_ghi'] = np.cos(2 * np.pi * ghi_norm)
+    print(f"  GHI normalization (train {TRAIN_RATIO:.0%}): min={ghi_min:.1f}, max={ghi_max:.1f}")
     
     # 湿度周期性特征
     df['sin_rh'] = np.sin(2 * np.pi * df['relative_humidity_pct'] / 100)
