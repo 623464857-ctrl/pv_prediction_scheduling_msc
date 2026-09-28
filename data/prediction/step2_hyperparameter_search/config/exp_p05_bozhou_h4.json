@@ -1,0 +1,30 @@
+{
+    "horizon": 4,
+    "lookback": 48,
+    "sample_dir": "bozhou_h4_lb48",
+    "n_epochs_trial": 20,
+    "patience_trial": 5,
+    "model_search_space": {
+        "cnn_bilstm": {
+            "lr": [0.0005, 0.001, 0.002],
+            "batch_size": [32, 64, 128],
+            "hidden_size": [32, 64, 128],
+            "num_layers": [1, 2, 3],
+            "dropout": [0.1, 0.2, 0.3],
+            "cnn_channels_0": [32, 64],
+            "cnn_channels_1": [64, 128],
+            "kernel_size": [3, 5]
+        }
+    },
+    "baseline_params": {
+        "cnn_bilstm": {
+            "lr": 0.001,
+            "batch_size": 64,
+            "hidden_size": 64,
+            "num_layers": 2,
+            "dropout": 0.2,
+            "cnn_channels": [32, 64],
+            "kernel_size": 3
+        }
+    }
+}

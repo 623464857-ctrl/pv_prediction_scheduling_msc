@@ -1,0 +1,37 @@
+{
+  "dataset": "bozhou",
+  "model": "cnn_bilstm",
+  "horizon": 4,
+  "lookback": 48,
+  "search_method": "optuna_afsa_hybrid",
+  "best_strategy": "S1",
+  "best_params": {
+    "lr": 0.001,
+    "batch_size": 32,
+    "hidden_size": 128,
+    "num_layers": 2,
+    "dropout": 0.2,
+    "kernel_size": 5,
+    "cnn_channels": [
+      32,
+      128
+    ]
+  },
+  "best_value": 0.021402815979236416,
+  "quick_best_value": 0.023616672298206152,
+  "quick_composite_score": 152.55765525450317,
+  "fold_losses": [
+    0.017792291216132735,
+    0.020010610661365506,
+    0.026405546060211005
+  ],
+  "best_fold_idx": 0,
+  "avg_power_metrics": {
+    "MAE": 0.03905743360519409,
+    "RMSE": 0.06653964794909585,
+    "MAPE": 7.560654163360596,
+    "R2": 0.8576923608779907
+  },
+  "n_trials": 5,
+  "prediction_mode": "residual"
+}

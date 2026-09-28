@@ -1,0 +1,19 @@
+{
+  "S1": {
+    "strategy": "S1",
+    "params": {
+      "lr": "0.002",
+      "batch_size": "64",
+      "hidden_size": "128",
+      "num_layers": "2",
+      "dropout": "0.1",
+      "cnn_channels_0": 32,
+      "cnn_channels_1": 64,
+      "kernel_size": "5"
+    },
+    "RMSE": 0.034407067259529696,
+    "composite_score": 181.73782390293803,
+    "trials": 5,
+    "elapsed_sec": 544.76
+  }
+}

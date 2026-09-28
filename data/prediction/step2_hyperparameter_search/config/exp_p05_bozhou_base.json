@@ -1,0 +1,32 @@
+{
+    "dataset": "bozhou",
+    "project_root": ".",
+    "data_raw_path": "data/prediction/step1_preprocessing/processed/stations/Bozhou_1_cleaned.csv",
+    "step2_root": "data/prediction/step2_hyperparameter_search",
+    "samples_dir": "data/prediction/step2_hyperparameter_search/samples",
+    "metrics_dir": "data/prediction/step2_hyperparameter_search/metrics",
+    "models_dir": "data/prediction/step2_hyperparameter_search/models",
+    "lookback": 16,
+    "train_frac": 0.70,
+    "val_frac": 0.15,
+    "test_frac": 0.15,
+    "capacity_kw": 220.0,
+    "capacity_mw": 0.22,
+    "n_rolling_folds": 3,
+    "rolling_train_frac": 0.667,
+    "reproduce_seeds": [42, 43, 44, 45, 46],
+    "hybrid_search": {
+        "strategies": ["S2", "S3", "S4", "S5"],
+        "n_trials": 10,
+        "score_weights": {
+            "rmse": 0.5,
+            "mae": 0.25,
+            "latency": 0.15,
+            "params": 0.10
+        }
+    },
+    "final_max_epochs": 50,
+    "final_patience": 8,
+    "final_lr": 0.001,
+    "prediction_mode": "residual"
+}
