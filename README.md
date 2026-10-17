@@ -1,289 +1,94 @@
-# 光伏预测与调度研究项目
+# 光伏发电功率预测与系统调度协同优化
 
-光伏功率预测与优化调度模型研究项目，基于亳州 (Bozhou) 光伏电站数据。
-
-## 项目结构
+面向高速公路服务区光储充微电网 (亳州站), 两层框架:
 
 ```
-pv_prediction_scheduling_msc_new/
-├── data/                           # 数据目录
-│   ├── raw/                        # 原始数据
-│   ├── data-analysis/              # 数据分析报告和图表
-│   │   ├── reports/                # 分析报告
-│   │   ├── charts/                 # 分析图表
-│   │   ├── bozhou_weekly_comparison/
-│   │   ├── power_surge_drop_analysis/
-│   │   └── power_weather_correlation/
-│   ├── data-get/                   # 数据获取脚本
-│   └── prediction/                # 预测相关数据
-│       ├── step1_preprocessing/    # 数据预处理输出
-│       │   ├── processed/          # 预处理后的数据
-│       │   │   └── stations/       # 各站点数据
-│       │   └── data_quality/       # 数据质量报告
-│       ├── step2_hyperparameter_search/  # 超参数搜索结果
-│       ├── step3_deep_learning/    # 深度学习模型
-│       ├── step4_evaluation/       # 模型评估结果
-│       └── step5_reporting/        # 报告生成
-│
-├── experiments/                     # 实验脚本
-│   └── prediction/
-│       ├── step1_preprocessing/    # 数据预处理脚本
-│       ├── step2_hyperparameter_search/  # 超参数搜索脚本
-│       ├── step3_deep_learning/    # 深度学习训练脚本
-│       ├── step4_evaluation/       # 模型评估脚本
-│       └── step5_reporting/        # 报告生成脚本
-│
-├── logs/                           # 日志文件
-├── reports/                        # 研究报告
-└── result/                        # 实验结果输出
+预测层: 历史功率 + 天气 ──CNN-BiLSTM──> 未来 15 分钟光伏功率
+                                              │
+调度层: 光伏预测 + 充电负荷 + 电价 ──MILP 滚动优化──> 储能充放电 / 充电桩调度 / 购售电计划
+                                              │
+实际结算: 用真实光伏执行计划, 计算成本和偏差 (光伏高估罚得重, 低估罚得轻)
 ```
 
----
-
-## 一、数据预处理 (Step 1)
-
-数据预处理是整个预测流水线的基础，确保数据质量满足模型训练要求。
-
-### 1.1 数据清洗流程
-
-亳州数据集预处理共包含 12 个步骤：
+## 目录结构
 
 ```
-原始数据 → 数据合并 → 字段标准化 → 时间序列重建 → 物理边界清洗
-    → 功率约束 → Hampel异常检测 → 辐照-功率一致性修正 → 短时插值
-    → 长缺失回填 → 白天/夜间分离 → 停机标记 → 衍生特征构建
+experiments/
+├── common.py                    所有路径和公共常量 (改目录只改这里)
+├── prediction/                  预测层, 按 p1 → p6 顺序运行
+│   ├── p1_preprocess.py         原始功率+天气 → Bozhou_1_preprocessed.csv
+│   ├── p2_quality_check.py      数据质量检查 → Bozhou_1_cleaned.csv
+│   ├── p3_prepare_samples.py    构造 24 个特征 + 滑动窗口 + 标准化 → samples/
+│   ├── p4_search_hparams.py     超参数搜索 (Optuna-TPE + 鱼群算法 AFSA) → params/
+│   ├── p5_train.py              训练 → models/
+│   ├── p6_evaluate.py           验证集/测试集预测、指标、曲线图 → predictions/, figures/
+│   ├── models.py                CNN-BiLSTM 模型
+│   ├── afsa.py                  人工鱼群算法
+│   └── torch_utils.py           训练循环 (早停, 进度条)
+└── scheduling/                  调度层, 按 s1 → s2 顺序运行
+    ├── config.py                电价、储能、充电桩、偏差考核等全部参数
+    ├── s1_prepare_data.py       光储充运行数据 (5 分钟 xlsx) → schedule_15min.csv
+    ├── s2_run_dispatch.py       逐日滚动调度 + 实际结算 + 各策略对比
+    ├── dispatch_model.py        调度优化模型 (开题报告式 1-5 ~ 1-14)
+    ├── strategies.py            6 种对比策略, 非对称风险修正
+    └── settlement.py            按实际光伏执行计划并结算费用
+
+data/
+├── raw/亳州/                     原始光伏功率 (15 min) 和 Weatherbit 天气
+├── schedule_data/               光储充运行数据 (5 min, 2025-11 ~ 2026-08)
+├── processed/                   清洗后的数据 (预测层和调度层的输入)
+├── data-analysis/               数据分析图表
+└── data-get/fetch_bozhou.py     天气数据下载脚本
+
+result/
+├── prediction/                  样本、超参数、模型、预测结果、图
+└── scheduling/                  逐时段调度结果、汇总表、图
+
+logs/                            每个脚本的运行日志
+_archive/                        已不使用的旧脚本和旧结果
 ```
 
-| 处理阶段 | 方法 | 说明 |
-|---------|------|------|
-| 字段标准化 | 别名映射 | 统一列名格式（temp→temperature_c等） |
-| 物理边界清洗 | 边界裁剪 | 设定合理范围（辐照度0-1600 W/m²等） |
-| 功率约束 | 边界裁剪 | 负功率清零，超容量标记为NaN |
-| 异常检测 | Hampel滤波器 | 基于中位数±nσ检测天气/功率异常 |
-| 辐照-功率一致性 | 物理约束 | 无辐照时功率过高则标记为异常 |
-| 短时缺失插值 | 分特征策略 | ≤4步：线性/样条/前后填充，按特征类型选择 |
-| 长缺失回填 | 分层分组中位数 | 月+小时、星期+小时等多层级回填 |
-| 白天/夜间 | GHI阈值 | GHI>20 W/m²为白天，夜间功率强制置零 |
-| 停机标记 | 条件检测 | 白天条件但功率为零标记为疑似停机 |
-
-### 1.2 核心特征
-
-| 特征名 | 单位 | 说明 |
-|-------|------|------|
-| temperature_c | °C | 环境温度 |
-| ghi_wm2 | W/m² | 水平面总辐照度 |
-| dni_wm2 | W/m² | 直接法向辐照度 |
-| dhi_wm2 | W/m² | 水平面散射辐照度 |
-| relative_humidity_pct | % | 相对湿度 |
-| cloud_cover_pct | % | 云量覆盖率 |
-| uv_index | — | 紫外线指数 |
-| precip_rate_mmhr | mm/h | 降水率 |
-| visibility_km | km | 能见度 |
-| weather_category | — | 天气类型编码（0-10） |
-
-### 1.3 调度/预测衍生特征
-
-| 特征名 | 说明 |
-|-------|------|
-| power_pu | 归一化功率（除以装机容量） |
-| power_ramp_15m | 15分钟功率变化量 |
-| sin_hour / cos_hour | 小时周期特征（正弦/余弦编码） |
-| sin_ghi / cos_ghi | 辐照度周期特征 |
-| sin_rh / cos_rh | 湿度周期特征 |
-| is_daytime | 白天/夜间标记 |
-| is_potential_shutdown | 疑似停机标记 |
-
-### 1.4 数据集划分
-
-- **训练集**: 70% (时间序列前段)
-- **验证集**: 15%
-- **测试集**: 15% (时间序列末端)
-
----
-
-## 二、超参数搜索 (Step 2)
-
-### 2.1 搜索算法
-
-项目采用 **Optuna + AFSA 混合搜索策略**，支持6种搜索策略：
-
-| 策略 | 描述 |
-|-----|------|
-| S1 | 纯 Optuna (RandomSampler) - 随机采样 |
-| S2 | 纯 AFSA - 人工鱼群算法 (Artificial Fish Swarm Algorithm) |
-| S3 | Optuna → AFSA 串行（先粗搜索再精调） |
-| S4 | Optuna + AFSA 并行（双种群同时搜索） |
-| S5 | Optuna (CmaEsSampler) + AFSA |
-| S6 | 多策略集成（所有策略加权投票） |
-
-### 2.2 搜索空间
-
-| 参数 | 范围/选项 |
-|-----|----------|
-| learning_rate | [0.0005, 0.001, 0.005, 0.01] |
-| batch_size | [32, 64, 128, 256] |
-| hidden_size | [32, 64, 128] |
-| num_layers | [1, 2, 3] |
-| dropout | [0.1, 0.2, 0.3, 0.4, 0.5] |
-| cnn_channels | [(16,32), (32,64), (64,128)] |
-
-### 2.3 交叉验证
-
-采用 **滚动时间窗口交叉验证** (Rolling Time Series CV)：
-- 滚动窗口数: 3
-- 每折训练比例: 67%
-
----
-
-## 三、深度学习模型 (Step 3)
-
-### 3.1 CNN-BiLSTM 模型架构
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Input Layer                          │
-│                    (seq_len, n_features)                    │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    CNN Block (1D)                           │
-│  Conv1d → BatchNorm → ReLU → Dropout                        │
-│  Conv1d → BatchNorm → ReLU → Dropout                        │
-│               (kernel_size=3, padding=1)                     │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   BiLSTM Layer                              │
-│         Bidirectional LSTM (hidden_size * 2)                │
-│              num_layers=2, dropout=0.2                       │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  Fully Connected Layer                       │
-│                  Linear(hidden_size*2 → horizon)            │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                       Output                               │
-│                       (horizon)                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 3.2 模型配置
-
-| 预测步长 (H) | 回溯窗口 (L) | 时间跨度 | 隐藏层大小 | LSTM层数 |
-|-------------|-------------|---------|-----------|---------|
-| H=1 | L=16 | 4小时 | 64 | 2 |
-| H=4 | L=48 | 12小时 | 64 | 2 |
-| H=16 | L=96 | 24小时 | 64 | 2 |
-
-### 3.3 损失函数
-
-项目支持多种损失函数，包括标准 MSE 和毛刺感知损失函数：
-
-#### 基础损失函数
-| 损失函数 | 说明 |
-|---------|------|
-| MSE | 均方误差 (默认) |
-
-#### 毛刺感知损失函数 (Surge-Aware Loss)
-
-| 损失函数 | 说明 |
-|---------|------|
-| VolatilityWeightedLoss | 波动加权损失 - 对高波动样本给予更高权重 |
-| RampWeightedLoss | 爬坡加权损失 - 针对功率骤变时刻的加权 |
-| PhysicsGuidedCompoundLoss | 物理引导复合损失 |
-| FocalLossForVolatility | 波动焦点损失 |
-| EdgeAwareLoss | 边缘感知损失 |
-| SurgeAwareCompoundLoss | 毛刺感知复合损失 |
-| DirectionAwareLoss | 方向感知损失 |
-| SurgeIntensityWeightedLoss | 毛刺强度加权损失 |
-| EnhancedSurgeAwareCompoundLoss | 增强版毛刺感知复合损失 |
-
-### 3.4 毛刺感知模型变体
-
-| 模型 | 说明 |
-|-----|------|
-| SurgeCNNBiLSTM | 接受毛刺特征作为额外输入通道 |
-| SurgeGateCNNBiLSTM | 使用门控机制融合毛刺特征 |
-| SurgeAttentionCNNBiLSTM | 使用注意力机制关注毛刺时刻 |
-
----
-
-## 四、模型评估 (Step 4)
-
-### 4.1 评估指标
-
-| 指标 | 公式 | 说明 |
-|-----|------|------|
-| MAE | Mean(\|y_true - y_pred\|) | 平均绝对误差 |
-| RMSE | √Mean((y_true - y_pred)²) | 均方根误差 |
-| MAPE | Mean(\|y_true - y_pred\| / y_true) × 100 | 平均绝对百分比误差 |
-| R² | 1 - SS_res / SS_tot | 决定系数 |
-
-### 4.2 早停策略
-
-```python
-if val_loss > best_val_loss * patience_factor:
-    patience_counter += 1
-    if patience_counter >= patience:
-        stop training
-```
-
----
-
-## 五、数据集
-
-| 项目 | 数值 |
-|------|------|
-| 数据来源 | 亳州光伏电站 |
-| 装机容量 | ~220 kW |
-| 时间分辨率 | 15分钟 |
-| 时间范围 | 2026年3月 - 9月 |
-
----
-
-## 实验流程
+## 运行
 
 ```bash
-# Step 1: 数据预处理
-python -m experiments.prediction.step1_preprocessing.exp_01_preprocess_bozhou
-python -m experiments.prediction.step1_preprocessing.exp_01_split_data
-python -m experiments.prediction.step1_preprocessing.exp_01_analyze_correlation
+# 预测层 (H=1, 提前 15 分钟)
+python -m experiments.prediction.p3_prepare_samples
+python -m experiments.prediction.p4_search_hparams          # 可选, 约 1 小时; 目前未运行, 使用默认超参数
+python -m experiments.prediction.p5_train --seeds 42 43 44
+python -m experiments.prediction.p6_evaluate --seeds 42 43 44
+python -m experiments.prediction.models                     # 打印每一层 tensor 形状
 
-# Step 2: 超参数搜索
-python -m experiments.prediction.step2_hyperparameter_search.exp_02_prepare_samples_bozhou
-python -m experiments.prediction.step2_hyperparameter_search.exp_02_hybrid_search_bozhou --horizon 1
-
-# Step 3: 深度学习训练
-python -m experiments.prediction.step3_deep_learning.exp_03_train_bozhou
-
-# Step 4: 模型评估
-python -m experiments.prediction.step4_evaluation.exp_04_evaluate_bozhou
-
-# Step 5: 生成报告
-python -m experiments.prediction.step5_reporting.exp_05_step_audit
+# 调度层
+python -m experiments.scheduling.s1_prepare_data
+python -m experiments.scheduling.s2_run_dispatch            # 约 10 分钟
 ```
 
----
+p1、p2 一般不需要重跑: 用当前的原始天气文件 (重新下载过, 坐标已更新) 重跑会得到与现有
+`Bozhou_1_cleaned.csv` 不同的结果, 现有实验都基于现有的 cleaned 文件。
 
-## 技术栈
+## 预测层
 
-- Python 3.8+
-- **PyTorch** - 深度学习框架
-- **Scikit-learn** - 数据预处理与评估
-- **Optuna** - 超参数优化
-- **AFSA** - 人工鱼群算法
-- **Pandas/NumPy** - 数据处理
-- **Matplotlib** - 可视化
-- **SciPy** - 科学计算（插值、统计）
+详细说明 (每个脚本的输入、输出、逻辑, 当前结果): [docs/预测部分说明.md](docs/预测部分说明.md)
 
----
+- **输入**: 过去 16 个时段 (4 小时) × 24 个特征, 包括功率滞后/爬坡/滚动统计、GHI、温度、湿度、云量、能见度、时间编码;
+  按训练集均值/标准差标准化
+- **输出**: 下一个 15 分钟的 `power_pu` (= kW / 220)
+- **模型**: Conv1d×2 → 双向 LSTM → Linear
+- **划分**: 按时间 70% / 15% / 15%, 测试集为 2026-08-04 10:00 ~ 08-31
+- **基准**: 持续性预测 (下一时刻 = 当前时刻), 测试集 RMSE 0.0911
 
-## 脚本文件说明
+## 调度层
 
-详细脚本说明请参见 [experiments/prediction/SCRIPTS_README.md](experiments/prediction/SCRIPTS_README.md)
+详细说明 (每个脚本的输入、输出、逻辑, 当前结果): [docs/调度部分说明.md](docs/调度部分说明.md)
+
+- **目标**: 总运行成本最小 = 购电费 − 售电收入 + 储能运行成本 + 弃光惩罚 + 柔性负荷补偿
+- **约束**: 功率平衡、光伏出力上限、储能充放电互斥与 SOC、充电负荷最多推迟 2 小时、联络线容量、购售电互斥
+- **求解**: pulp + CBC, 每 15 分钟滚动求解一次 [当前, 当天结束]
+- **非对称风险修正**: 光伏高估 (缺电) 的考核比低估重, 按报童模型取预测误差分布的偏低分位数做计划
+- **参数**: 电价时段按该站储能实际的充放电规律推断, 价格水平为假设值, 见 `experiments/scheduling/config.py`,
+  请替换为电费单上的实际电价
+
+## 环境
+
+Python 3.11, PyTorch, scikit-learn, pandas, optuna, pulp, matplotlib, tqdm。
+训练请用 CPU 或 CUDA, 不要用 Apple GPU (MPS): 实测在 MPS 上训练该模型不收敛。
