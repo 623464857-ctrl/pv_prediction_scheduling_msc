@@ -1,0 +1,14 @@
+[INFO] val  seed=42      RMSE=0.0445 MAE=0.0233 R2=0.9681
+[INFO] val  seed=43      RMSE=0.0446 MAE=0.0248 R2=0.9680
+[INFO] val  seed=44      RMSE=0.0456 MAE=0.0240 R2=0.9664
+[INFO] val  单模型均值    RMSE=0.0449 ± 0.0005
+[INFO] val  集成(3个)      RMSE=0.0442 MAE=0.0235 R2=0.9685
+[INFO] val  persistence RMSE=0.0517 MAE=0.0267 R2=0.9569
+[INFO] test seed=42      RMSE=0.0451 MAE=0.0237 R2=0.9616
+[INFO] test seed=43      RMSE=0.0455 MAE=0.0252 R2=0.9608
+[INFO] test seed=44      RMSE=0.0466 MAE=0.0242 R2=0.9589
+[INFO] test 单模型均值    RMSE=0.0457 ± 0.0007
+[INFO] test 集成(3个)      RMSE=0.0451 MAE=0.0238 R2=0.9616
+[INFO] test persistence RMSE=0.0517 MAE=0.0261 R2=0.9496
+[INFO] 测试集: 模型 RMSE 比持续性基准低 12.7%
+[INFO] 预测结果: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\result\prediction\predictions\two_stage_sigma3\h1_hybrid_test.csv | 图: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\result\prediction\figures\two_stage_sigma3\h1_hybrid_test_curve.png

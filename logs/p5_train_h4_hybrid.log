@@ -1,0 +1,6 @@
+[INFO] H=4 mode=hybrid seed=42 | train=12329 val=2641 | 超参数来源: best_params_h4_hybrid.json | {'lr': 0.0005, 'batch_size': 32, 'hidden_size': 32, 'num_layers': 2, 'dropout': 0.1, 'cnn_channels': [16, 32], 'kernel_size': 5}
+[INFO] H=4 mode=hybrid seed=42 完成: 最优 val_loss=0.00504, epochs=12, 耗时 21s -> h4_hybrid_seed42.pt
+[INFO] H=4 mode=hybrid seed=43 | train=12329 val=2641 | 超参数来源: best_params_h4_hybrid.json | {'lr': 0.0005, 'batch_size': 32, 'hidden_size': 32, 'num_layers': 2, 'dropout': 0.1, 'cnn_channels': [16, 32], 'kernel_size': 5}
+[INFO] H=4 mode=hybrid seed=43 完成: 最优 val_loss=0.00523, epochs=13, 耗时 21s -> h4_hybrid_seed43.pt
+[INFO] H=4 mode=hybrid seed=44 | train=12329 val=2641 | 超参数来源: best_params_h4_hybrid.json | {'lr': 0.0005, 'batch_size': 32, 'hidden_size': 32, 'num_layers': 2, 'dropout': 0.1, 'cnn_channels': [16, 32], 'kernel_size': 5}
+[INFO] H=4 mode=hybrid seed=44 完成: 最优 val_loss=0.00520, epochs=14, 耗时 23s -> h4_hybrid_seed44.pt

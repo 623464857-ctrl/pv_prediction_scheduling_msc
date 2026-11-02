@@ -1,0 +1,6 @@
+[INFO] H=4 mode=optuna seed=42 | train=12329 val=2641 | 超参数来源: best_params_h4_optuna.json | {'lr': 0.001, 'batch_size': 32, 'hidden_size': 128, 'num_layers': 3, 'dropout': 0.1, 'cnn_channels': [32, 64], 'kernel_size': 5}
+[INFO] H=4 mode=optuna seed=42 完成: 最优 val_loss=0.00509, epochs=8, 耗时 23s -> h4_optuna_seed42.pt
+[INFO] H=4 mode=optuna seed=43 | train=12329 val=2641 | 超参数来源: best_params_h4_optuna.json | {'lr': 0.001, 'batch_size': 32, 'hidden_size': 128, 'num_layers': 3, 'dropout': 0.1, 'cnn_channels': [32, 64], 'kernel_size': 5}
+[INFO] H=4 mode=optuna seed=43 完成: 最优 val_loss=0.00513, epochs=7, 耗时 18s -> h4_optuna_seed43.pt
+[INFO] H=4 mode=optuna seed=44 | train=12329 val=2641 | 超参数来源: best_params_h4_optuna.json | {'lr': 0.001, 'batch_size': 32, 'hidden_size': 128, 'num_layers': 3, 'dropout': 0.1, 'cnn_channels': [32, 64], 'kernel_size': 5}
+[INFO] H=4 mode=optuna seed=44 完成: 最优 val_loss=0.00513, epochs=9, 耗时 24s -> h4_optuna_seed44.pt

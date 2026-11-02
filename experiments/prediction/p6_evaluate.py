@@ -9,7 +9,7 @@
 多个 seed 时取各模型预测的平均值 (集成)。指标单位为 power_pu (= kW / CAPACITY_KW)。
 基准 "持续性预测" (y_persist): 直接把当前时刻功率当作未来的预测值。
 
-python -m experiments.prediction.p6_evaluate                              # 默认 H=1, mode=hybrid
+python -m experiments.prediction.p6_evaluate                              # 默认 H=1, mode=optuna
 python -m experiments.prediction.p6_evaluate --horizon 4 --mode optuna     # H=4, optuna 模式
 python -m experiments.prediction.p6_evaluate --seeds 42 43 44
 """
@@ -27,7 +27,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from experiments.common import PRED_FIGURES_DIR, PREDICTIONS_DIR, compute_metrics, sample_dir, setup_logger
 from experiments.prediction.models import build_model
-from experiments.prediction.p5_train import model_path, load_params_with_mode
+from experiments.prediction.p5_train import load_params_with_mode, model_path
 from experiments.prediction.torch_utils import get_device, predict
 
 plt.rcParams["font.sans-serif"] = ["Arial Unicode MS", "PingFang SC", "SimHei", "Microsoft YaHei"]
@@ -86,7 +86,7 @@ def plot_test(df: pd.DataFrame, horizon: int, mode: str, metrics: dict, out: Pat
 def main():
     parser = argparse.ArgumentParser(description="评估 CNN-BiLSTM")
     parser.add_argument("--horizon", type=int, default=1, choices=[1, 4, 16])
-    parser.add_argument("--mode", type=str, default="hybrid",
+    parser.add_argument("--mode", type=str, default="optuna",
                         choices=["optuna", "afsa", "hybrid"],
                         help="超参数来源模式: optuna/afsa/hybrid")
     parser.add_argument("--seeds", type=int, nargs="+", default=[42])
@@ -117,7 +117,7 @@ def main():
     logger.info("测试集: 模型 RMSE 比持续性基准低 %.1f%%", skill * 100)
 
     metrics_file = PREDICTIONS_DIR / f"h{h}_{m}_metrics.json"
-    fig_file = PREDICTIONS_DIR.parent / "figures" / f"h{h}_{m}_test_curve.png"
+    fig_file = PRED_FIGURES_DIR / f"h{h}_{m}_test_curve.png"
     metrics_file.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
     plot_test(df, h, m, test, fig_file)
     logger.info("预测结果: %s | 图: %s", PREDICTIONS_DIR / f"h{h}_{m}_test.csv", fig_file)

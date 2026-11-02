@@ -1,0 +1,33 @@
+{
+  "horizon": 1,
+  "mode": "hybrid",
+  "params": {
+    "lr": 0.002,
+    "batch_size": 32,
+    "hidden_size": 64,
+    "num_layers": 1,
+    "dropout": 0.2,
+    "cnn_channels": [
+      16,
+      32
+    ],
+    "kernel_size": 7
+  },
+  "val_loss": 0.0017530880315286804,
+  "found_by": "afsa",
+  "default_params": {
+    "lr": 0.002,
+    "batch_size": 64,
+    "hidden_size": 128,
+    "num_layers": 2,
+    "dropout": 0.1,
+    "cnn_channels": [
+      32,
+      64
+    ],
+    "kernel_size": 5
+  },
+  "default_val_loss": 0.0022590443799604793,
+  "n_evals": 25,
+  "trial_epochs": 12
+}

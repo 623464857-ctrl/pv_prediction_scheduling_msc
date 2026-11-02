@@ -1,0 +1,14 @@
+[INFO] ============================================================
+[INFO] H=4 超参数搜索 | 模式: HYBRID
+[INFO] ============================================================
+[INFO] 运行 Optuna + AFSA 混合搜索: Optuna 15 次 + AFSA 最多 10 次
+[INFO] Optuna 阶段完成, 最优 val_loss=0.00511
+[INFO] ------------------------------------------------------------
+[INFO] 搜索完成! 模式: HYBRID, 总评估次数: 22
+[INFO] 默认超参数 val_loss=0.00526
+[INFO] 最优超参数 val_loss=0.00505 (由 afsa 找到, 改善 4.1%)
+[INFO] 最优参数: {'lr': 0.0005, 'batch_size': 32, 'hidden_size': 32, 'num_layers': 2, 'dropout': 0.1, 'cnn_channels': [16, 32], 'kernel_size': 5}
+[INFO] 结果已保存:
+[INFO]   - 历史记录: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\result\prediction\params\two_stage_sigma3\search_history_h4_hybrid.csv
+[INFO]   - 最优参数: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\result\prediction\params\two_stage_sigma3\best_params_h4_hybrid.json
+[INFO]   - 收敛曲线: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\result\prediction\figures\two_stage_sigma3\h4_search_curve_hybrid.png

@@ -1,0 +1,14 @@
+[INFO] val  seed=42      RMSE=0.0956 MAE=0.0549 R2=0.8542
+[INFO] val  seed=43      RMSE=0.0960 MAE=0.0531 R2=0.8530
+[INFO] val  seed=44      RMSE=0.0933 MAE=0.0511 R2=0.8609
+[INFO] val  单模型均值    RMSE=0.0950 ± 0.0012
+[INFO] val  集成(3个)      RMSE=0.0935 MAE=0.0513 R2=0.8606
+[INFO] val  persistence RMSE=0.1941 MAE=0.1188 R2=0.3987
+[INFO] test seed=42      RMSE=0.0940 MAE=0.0543 R2=0.8312
+[INFO] test seed=43      RMSE=0.0962 MAE=0.0524 R2=0.8234
+[INFO] test seed=44      RMSE=0.0970 MAE=0.0539 R2=0.8205
+[INFO] test 单模型均值    RMSE=0.0957 ± 0.0012
+[INFO] test 集成(3个)      RMSE=0.0944 MAE=0.0521 R2=0.8300
+[INFO] test persistence RMSE=0.1844 MAE=0.1078 R2=0.3506
+[INFO] 测试集: 模型 RMSE 比持续性基准低 48.8%
+[INFO] 预测结果: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\result\prediction\predictions\two_stage_sigma3\h16_optuna_test.csv | 图: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\result\prediction\figures\two_stage_sigma3\h16_optuna_test_curve.png

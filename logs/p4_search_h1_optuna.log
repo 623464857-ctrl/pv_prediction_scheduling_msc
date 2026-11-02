@@ -1,0 +1,13 @@
+[INFO] ============================================================
+[INFO] H=1 超参数搜索 | 模式: OPTUNA
+[INFO] ============================================================
+[INFO] 运行单 Optuna TPE 搜索, 15 次试验
+[INFO] ------------------------------------------------------------
+[INFO] 搜索完成! 模式: OPTUNA, 总评估次数: 15
+[INFO] 默认超参数 val_loss=0.00240
+[INFO] 最优超参数 val_loss=0.00206 (由 optuna 找到, 改善 14.1%)
+[INFO] 最优参数: {'lr': 0.005, 'batch_size': 32, 'hidden_size': 32, 'num_layers': 1, 'dropout': 0.2, 'cnn_channels': [16, 32], 'kernel_size': 5}
+[INFO] 结果已保存:
+[INFO]   - 历史记录: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\result\prediction\params\two_stage_sigma3\search_history_h1_optuna.csv
+[INFO]   - 最优参数: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\result\prediction\params\two_stage_sigma3\best_params_h1_optuna.json
+[INFO]   - 收敛曲线: C:\Users\MoYu\Desktop\pv_prediction_scheduling_msc_new\result\prediction\figures\two_stage_sigma3\h1_search_curve_optuna.png

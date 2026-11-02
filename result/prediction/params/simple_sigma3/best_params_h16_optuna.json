@@ -1,0 +1,33 @@
+{
+  "horizon": 16,
+  "mode": "optuna",
+  "params": {
+    "lr": 0.002,
+    "batch_size": 128,
+    "hidden_size": 32,
+    "num_layers": 1,
+    "dropout": 0.3,
+    "cnn_channels": [
+      16,
+      32
+    ],
+    "kernel_size": 7
+  },
+  "val_loss": 0.008283543090025583,
+  "found_by": "optuna",
+  "default_params": {
+    "lr": 0.002,
+    "batch_size": 64,
+    "hidden_size": 128,
+    "num_layers": 2,
+    "dropout": 0.1,
+    "cnn_channels": [
+      32,
+      64
+    ],
+    "kernel_size": 5
+  },
+  "default_val_loss": 0.009032774776209234,
+  "n_evals": 15,
+  "trial_epochs": 12
+}

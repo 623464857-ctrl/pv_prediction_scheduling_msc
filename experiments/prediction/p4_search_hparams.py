@@ -4,7 +4,10 @@
 模式说明:
   optuna   : 单 Optuna TPE 搜索 (粗搜, 覆盖面广)
   afsa     : 单 AFSA 鱼群算法搜索 (从随机种群开始精搜)
-  hybrid   : Optuna-TPE 粗搜 + AFSA 精搜 (默认, 效果最好)
+  hybrid   : Optuna-TPE 粗搜 + AFSA 精搜 (备用)
+
+当前实验默认使用纯 Optuna 搜索 (mode=optuna): 单次 TPE 采样覆盖面广、
+结果可复现性好, 不再与 AFSA 组合。
 
 评价标准: 验证集 MSE (只看验证集, 测试集完全不参与, 避免"用测试集调参")。
 
@@ -16,7 +19,7 @@
 python -m experiments.prediction.p4_search_hparams                           # 默认 H=1, optuna 模式
 python -m experiments.prediction.p4_search_hparams --horizon 1 --mode optuna --trials 30
 python -m experiments.prediction.p4_search_hparams --horizon 4 --mode afsa   --evals 20
-python -m experiments.prediction.p4_search_hparams --horizon 16 --mode hybrid
+python -m experiments.prediction.p4_search_hparams --horizon 16 --mode hybrid  # 备用对比
 """
 
 import argparse

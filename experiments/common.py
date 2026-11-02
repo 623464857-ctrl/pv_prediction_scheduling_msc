@@ -14,6 +14,26 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 # ---------------------------------------------------------------------------
+# 配置后缀（由 run_4configs.py 动态设置，格式如 "simple_sigma3"）
+# 各配置使用独立的子目录避免结果冲突
+# ---------------------------------------------------------------------------
+_CFG_SUFFIX = "two_stage_sigma3"  # run_4configs
+
+
+def set_config_suffix(suffix: str) -> None:
+    """run_4configs.py 调用此函数设置配置后缀，各子目录自动带上后缀"""
+    global _CFG_SUFFIX
+    _CFG_SUFFIX = suffix
+
+
+def _cfg_subdir(base: Path) -> Path:
+    """如果设置了后缀，返回 base/<suffix>，否则返回 base"""
+    if _CFG_SUFFIX:
+        return base / _CFG_SUFFIX
+    return base
+
+
+# ---------------------------------------------------------------------------
 # 数据
 # ---------------------------------------------------------------------------
 RAW_DIR = PROJECT_ROOT / "data" / "raw" / "亳州"
@@ -22,20 +42,27 @@ RAW_WEATHER_CSV = RAW_DIR / "亳州3-8月天气数据.csv"            # Weatherb
 SCHEDULE_RAW_DIR = PROJECT_ROOT / "data" / "schedule_data"   # 光储充运行数据 (5 min, xlsx)
 
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
-PREPROCESSED_CSV = PROCESSED_DIR / "Bozhou_1_preprocessed.csv"  # p1 输出
-CLEANED_CSV = PROCESSED_DIR / "Bozhou_1_cleaned.csv"            # p2 输出 (预测模型的输入数据)
+
+def _processed_csv(filename_base: str) -> Path:
+    """生成配置特定的 processed 目录下的 CSV 路径"""
+    if _CFG_SUFFIX:
+        return PROCESSED_DIR / f"{filename_base}_{_CFG_SUFFIX}.csv"
+    return PROCESSED_DIR / f"{filename_base}.csv"
+
+PREPROCESSED_CSV = _processed_csv("Bozhou_1_preprocessed")  # p1 输出
+CLEANED_CSV = _processed_csv("Bozhou_1_cleaned")           # p2 输出 (预测模型的输入数据)
 QUALITY_REPORT_DIR = PROCESSED_DIR / "data_quality"
-SCHEDULE_CSV = PROCESSED_DIR / "schedule_15min.csv"             # s1 输出 (调度模型的输入数据)
+SCHEDULE_CSV = PROCESSED_DIR / "schedule_15min.csv"       # s1 输出 (调度模型的输入数据)
 
 # ---------------------------------------------------------------------------
 # 结果
 # ---------------------------------------------------------------------------
 PRED_RESULT_DIR = PROJECT_ROOT / "result" / "prediction"
-SAMPLES_DIR = PRED_RESULT_DIR / "samples"          # 滑动窗口样本
-MODELS_DIR = PRED_RESULT_DIR / "models"            # 训练好的模型
-PARAMS_DIR = PRED_RESULT_DIR / "params"            # 超参数 (搜索结果)
-PREDICTIONS_DIR = PRED_RESULT_DIR / "predictions"  # 测试集预测
-PRED_FIGURES_DIR = PRED_RESULT_DIR / "figures"
+SAMPLES_DIR = _cfg_subdir(PRED_RESULT_DIR / "samples")   # 滑动窗口样本
+MODELS_DIR = _cfg_subdir(PRED_RESULT_DIR / "models")    # 训练好的模型
+PARAMS_DIR = _cfg_subdir(PRED_RESULT_DIR / "params")    # 超参数 (搜索结果)
+PREDICTIONS_DIR = _cfg_subdir(PRED_RESULT_DIR / "predictions")  # 测试集预测
+PRED_FIGURES_DIR = _cfg_subdir(PRED_RESULT_DIR / "figures")
 
 SCHED_RESULT_DIR = PROJECT_ROOT / "result" / "scheduling"
 
@@ -79,11 +106,27 @@ def set_seed(seed: int) -> None:
 
 
 def sample_dir(horizon: int) -> Path:
-    return SAMPLES_DIR / f"h{horizon}_lb{LOOKBACK[horizon]}"
+    """配置特定的样本目录，如 result/prediction/samples/simple_sigma3/h1_lb16/"""
+    base = PRED_RESULT_DIR / "samples"
+    if _CFG_SUFFIX:
+        base = base / _CFG_SUFFIX
+    return base / f"h{horizon}_lb{LOOKBACK[horizon]}"
 
 
 def params_path(horizon: int) -> Path:
-    return PARAMS_DIR / f"best_params_h{horizon}.json"
+    """配置特定的超参数文件路径"""
+    base = PRED_RESULT_DIR / "params"
+    if _CFG_SUFFIX:
+        base = base / _CFG_SUFFIX
+    return base / f"best_params_h{horizon}.json"
+
+
+def model_path(horizon: int, mode: str, seed: int) -> Path:
+    """配置特定的模型文件路径"""
+    base = PRED_RESULT_DIR / "models"
+    if _CFG_SUFFIX:
+        base = base / _CFG_SUFFIX
+    return base / f"h{horizon}_{mode}_seed{seed}.pt"
 
 
 def load_params(horizon: int) -> dict:

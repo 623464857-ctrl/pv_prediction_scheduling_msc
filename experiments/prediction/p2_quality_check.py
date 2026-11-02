@@ -102,7 +102,6 @@ def check_data_quality(file_path, df=None):
     bounds_check = {
         'temperature_c': (-40, 50),
         'relative_humidity_pct': (0, 100),
-        'visibility_km': (0, 50),
         'cloud_cover_pct': (0, 100),
         'ghi_wm2': (0, 1500),
         'power_kw': (0, 500),
@@ -132,8 +131,8 @@ def check_data_quality(file_path, df=None):
     
     # 8. 特征相关性检查（与功率）
     print("\n【8. 特征与功率相关性】")
-    numeric_features = ['temperature_c', 'relative_humidity_pct', 'visibility_km',
-                       'cloud_cover_pct', 'ghi_wm2', 'uv_index', 'precip_rate_mmhr']
+    numeric_features = ['temperature_c', 'relative_humidity_pct',
+                       'cloud_cover_pct', 'ghi_wm2']
     correlations = {}
     for feat in numeric_features:
         if feat in df.columns:
@@ -220,7 +219,6 @@ def score_data_quality(df):
     bounds_check = [
         ('temperature_c', -40, 50),
         ('relative_humidity_pct', 0, 100),
-        ('visibility_km', 0, 50),
         ('cloud_cover_pct', 0, 100),
         ('ghi_wm2', 0, 1500),
         ('power_kw', 0, 500),

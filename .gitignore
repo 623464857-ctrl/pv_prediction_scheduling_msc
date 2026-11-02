@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.pyc
+tmp-py-cache/
 
 # macOS / IDE
 .DS_Store
@@ -8,6 +9,10 @@ __pycache__/
 
 # 可由脚本重新生成的大文件
 result/prediction/samples/
+
+# 临时分析脚本及其输出
+_tmp_*
+_audit_*
 
 # 旧版本脚本和结果
 _archive/

@@ -6,7 +6,7 @@
 输出: result/prediction/models/h{H}_{mode}_seed{seed}.pt
       result/prediction/models/h{H}_{mode}_seed{seed}_history.json  (每个 epoch 的损失)
 
-python -m experiments.prediction.p5_train                    # 默认 H=1, mode=hybrid, seed=42
+python -m experiments.prediction.p5_train                    # 默认 H=1, mode=optuna, seed=42
 python -m experiments.prediction.p5_train --horizon 1 --mode optuna --seeds 42 43 44
 python -m experiments.prediction.p5_train --horizon 4 --mode afsa
 """
@@ -21,7 +21,9 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from experiments.common import MODELS_DIR, PARAMS_DIR, DEFAULT_PARAMS, sample_dir, set_seed, setup_logger
+from experiments.common import (DEFAULT_PARAMS, MODELS_DIR, PARAMS_DIR, PRED_RESULT_DIR,
+                                _CFG_SUFFIX, sample_dir, set_seed, setup_logger)
+from experiments.common import model_path as common_model_path
 from experiments.prediction.models import build_model
 from experiments.prediction.torch_utils import get_device, make_loader, train_with_early_stop
 
@@ -29,13 +31,17 @@ MAX_EPOCHS = 20
 PATIENCE = 5
 
 
-def model_path(horizon: int, mode: str, seed: int) -> Path:
-    return MODELS_DIR / f"h{horizon}_{mode}_seed{seed}.pt"
-
-
 def search_params_path(horizon: int, mode: str) -> Path:
-    """根据模式和预测步长返回超参数文件路径。"""
-    return PARAMS_DIR / f"best_params_h{horizon}_{mode}.json"
+    """配置特定的超参数文件路径"""
+    base = PRED_RESULT_DIR / "params"
+    if _CFG_SUFFIX:
+        base = base / _CFG_SUFFIX
+    return base / f"best_params_h{horizon}_{mode}.json"
+
+
+def model_path(horizon: int, mode: str, seed: int) -> Path:
+    """通过 common.model_path 确保配置一致性"""
+    return common_model_path(horizon, mode, seed)
 
 
 def load_params_with_mode(horizon: int, mode: str) -> dict:
@@ -83,7 +89,7 @@ def train(horizon: int, mode: str, seed: int, logger) -> dict:
 def main():
     parser = argparse.ArgumentParser(description="训练 CNN-BiLSTM")
     parser.add_argument("--horizon", type=int, default=1, choices=[1, 4, 16])
-    parser.add_argument("--mode", type=str, default="hybrid",
+    parser.add_argument("--mode", type=str, default="optuna",
                         choices=["optuna", "afsa", "hybrid"],
                         help="超参数来源模式: optuna/afsa/hybrid")
     parser.add_argument("--seeds", type=int, nargs="+", default=[42])
